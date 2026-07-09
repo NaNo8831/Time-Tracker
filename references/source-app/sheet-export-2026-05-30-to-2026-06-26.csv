@@ -1,0 +1,41 @@
+Week 51-52,,,,,,,,,,,,,,Adj Key:,,
+Date,Day,Check-in,Check-out,ADJ./Hours,,Check-in 2,Check-out 2,Break Hours,Raw Hours,Work Hours,,,,x,Break,Input
+May-30,Sat,,,,,,,0,0.00,0.00,,,,v,Vacation,Input
+May-31,Sun,,,,,,,0,0.00,0.00,,,,h,Paid Holday/ Leave,Input
+Jun-1,Mon,,,,0,,,0,0.00,0.00,,,,s,Sick ,Input
+Jun-2,Tue,8:00,16:45,,0,,,0,8.75,8.75,,,,"""Blank""",No adjustment,
+Jun-3,Wed,8:00,15:00,,0,,,0,7.00,7.00,,,,P,Paternity Leave,Input
+Jun-4,Thu,8:00,12:00,s,4,,,0,8.00,8.00,Week Summary,,,,,
+Jun-5,Fri,8:00,13:00,v,4,,,0,9.00,9.00,32,Target,,Paid Holiday's,,
+,,,,,,,,,Actual,32.75,0.75,Over,,July 4th - Independence Day (Friday),,
+,,From Last Week,,Under,,-14.77,Rollover Adjustment,,Under,-14.02,,,,August 15th - Assumption of the Blessed Virgin Mary (Friday) - Holy Day of Obligation,,
+Jun-6,Sat,,,,0,,,0,0.00,0.00,,,,September 1st - Labor Day,,
+Jun-7,Sun,,,,0,,,0,0.00,0.00,,,,,,
+Jun-8,Mon,10:00,14:00,,0,,,0,4.00,4.00,,,,,,
+Jun-9,Tue,8:00,16:45,,0,,,0,8.75,8.75,,,,,,
+Jun-10,Wed,8:00,16:30,,0,,,0,8.50,8.50,,,,Paternity Leave Calculator,,
+Jun-11,Thu,9:30,13:00,s,2,2:00:00 PM,16:30,0,8.00,8.00,Week Summary,,,Total,Used,Remaining
+Jun-12,Fri,10:00,15:30,v,4,,,0,9.50,9.50,32,Target,,64,23.2,40.8
+,,,,,,,,,Actual,38.75,6.75,Over,,,,
+,,From Last Week,,Under,,-14.02,Rollover Adjustment,,Under,-7.27,,,,,,
+,,,,,,,,,,,,,,,,
+Week 1-2,,,,,,,,,,,,,,,,
+Date,Day,Check-in,Check-out,ADJ./Hours,,Check-in 2,Check-out 2,Break Hours,Raw Hours,Work Hours,,,,,,
+Jun-13,Sat,,,,0,,,0,0.00,0.00,,,,,,
+Jun-14,Sun,,,,0,,,0,0.00,0.00,,,,,,
+Jun-15,Mon,,,,0,,,0,0.00,0.00,,,,,,
+Jun-16,Tue,8:00,16:45,,0,,,0,8.75,8.75,,,,,,
+Jun-17,Wed,8:45,13:00,,0,,,0,4.25,4.25,,,,,,
+Jun-18,Thu,8:00,15:30,,0,19:15,21:00,0,9.25,9.25,Week Summary,,,,,
+Jun-19,Fri,13:00,16:30,,0,,,0,3.50,3.50,32,Target,,,,
+,,,,,,,,,Actual,25.75,-6.25,Under,,,,
+,,From Last Pay Priod,,Under,,-7.27,Rollover Adjustment,,Under,-13.52,,,,,,
+Jun-20,Sat,,,,0,,,0,0.00,0.00,,,,,,
+Jun-21,Sun,,,,0,,,0,0.00,0.00,,,,,,
+Jun-22,Mon,,,,0,,,0,0.00,0.00,,,,,,
+Jun-23,Tue,9:30,16:30,,0,,,0,7.00,7.00,,,,,,
+Jun-24,Wed,9:15,16:30,,0,,,0,7.25,7.25,,,,,,
+Jun-25,Thu,8:00,16:45,,0,,,0,8.75,8.75,Week Summary,,,,,
+Jun-26,Fri,10:00,13:00,,0,,,0,3.00,3.00,32,Target,,,,
+,,,,,,,,,Actual,26.00,-6.00,Under,,,,
+,,From Last Week,,Under,,-13.52,Rollover Adjustment,,Under,-19.52,,,,,,

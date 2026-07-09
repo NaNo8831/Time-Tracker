@@ -20,9 +20,9 @@ Use this file to track important project files, references, samples, and their s
 |---|---|---|---|
 | `README.md` | Project-specific starter documentation. | Personalized | Initialized from CLI metadata. |
 | `AGENTS.md` | Project-specific starter documentation. | Personalized | Initialized from CLI metadata. |
-| `planning/STATE.md` | Project-specific starter documentation. | Updated by Architect Pack 001 | Reflects locked v1 scope and Sprint 001 completion. |
-| `planning/DOMAIN.md` | Project-specific starter documentation. | Updated by Architect Pack 001 | Full domain model, business rules, and calculation formulas. |
-| `planning/FILE_INVENTORY.md` | Project-specific starter documentation. | Updated by Architect Pack 001 | This file. |
+| `planning/STATE.md` | Project-specific starter documentation. | Updated by Architect Pack 003 | Reflects Sprint 003 authorization. |
+| `planning/DOMAIN.md` | Project-specific starter documentation. | Updated by Architect Pack 003 | Break model rework, rolling balance seed, real sheet-parsing findings. |
+| `planning/FILE_INVENTORY.md` | Project-specific starter documentation. | Updated by Architect Pack 003 | This file. |
 
 ---
 
@@ -30,7 +30,9 @@ Use this file to track important project files, references, samples, and their s
 
 | Reference | Purpose | Status | Notes |
 |---|---|---|---|
-| Google Sheet: `https://docs.google.com/spreadsheets/d/1KKEhUQkF4SOgrrC_zReIPbNJwVC6k9eW44tk7AgTcYY/edit` | Source of the current manual time-tracking workflow; basis for the v1 data model and migration plan. | Reviewed | Open-access link provided by the user. Only 2026 calendar-year entries are in scope for migration (see `planning/DECISIONS.md`). Not downloaded into `references/source-app/` — external link only. |
+| Google Sheet: `https://docs.google.com/spreadsheets/d/1KKEhUQkF4SOgrrC_zReIPbNJwVC6k9eW44tk7AgTcYY/edit` | Source of the current manual time-tracking workflow. | Reviewed | Two real CSV exports (2026-05-02–06-26) reviewed cell-by-cell during Sprint 003 planning — see below. |
+| `references/source-app/sheet-export-2026-05-02-to-2026-05-29.csv` | Real source data for the first 4 weeks of Sprint 003's import batch. | Saved | Verbatim export shared by the user. |
+| `references/source-app/sheet-export-2026-05-30-to-2026-06-26.csv` | Real source data for the second 4 weeks of Sprint 003's import batch. | Saved | Verbatim export shared by the user. |
 
 ---
 
@@ -38,13 +40,24 @@ Use this file to track important project files, references, samples, and their s
 
 | File | Purpose | Status |
 |---|---|---|
-| `planning/sprints/001-discovery-architecture/requirements.md` | Sprint 001 requirements. | Created by Architect Pack 001 |
-| `planning/sprints/001-discovery-architecture/blueprint.md` | Sprint 001 architecture blueprint (data model, calculation rules, screens, migration plan). | Created by Architect Pack 001 |
-| `planning/sprints/001-discovery-architecture/acceptance.md` | Sprint 001 acceptance criteria. | Created by Architect Pack 001 |
-| `planning/sprints/001-discovery-architecture/handoff-prompt.md` | Sprint 001 Builder handoff prompt. | Created by Architect Pack 001 |
-| `docs/ARCHITECTURE.md` | Durable architecture reference for v1. | Updated by Architect Pack 001 |
-| `docs/API.md` | API surface notes for v1 (none planned). | Updated by Architect Pack 001 |
-| `docs/VALIDATION.md` | Validation priorities for Sprint 002 planning. | Updated by Architect Pack 001 |
+| `planning/sprints/001-discovery-architecture/*` | Discovery/architecture planning pack. | Complete |
+
+## Sprint 002 Deliverables
+
+| File | Purpose | Status |
+|---|---|---|
+| `planning/sprints/002-core-mvp-build/*` | Core MVP build (auth, daily entry, settings, recap). | Complete, hardened through 3 rounds |
+
+## Sprint 003 Deliverables
+
+| File | Purpose | Status |
+|---|---|---|
+| `planning/sprints/003-break-rework-and-migration/requirements.md` | Sprint 003 requirements. | Created by Architect Pack 003 |
+| `planning/sprints/003-break-rework-and-migration/blueprint.md` | Break model rework + migration technical design. | Created by Architect Pack 003 |
+| `planning/sprints/003-break-rework-and-migration/acceptance.md` | Sprint 003 acceptance criteria, including exact expected Rolling Balance values per imported week. | Created by Architect Pack 003 |
+| `planning/sprints/003-break-rework-and-migration/handoff-prompt.md` | Sprint 003 Builder handoff prompt. | Created by Architect Pack 003 |
+| `docs/ARCHITECTURE.md` | Durable architecture reference. | Updated by Architect Pack 003 |
+| `docs/VALIDATION.md` | Validation priorities. | Updated by Architect Pack 003 |
 
 ---
 
@@ -52,8 +65,8 @@ Use this file to track important project files, references, samples, and their s
 
 | Folder | Purpose | Status | Notes |
 |---|---|---|---|
-| `references/client-docs/` | Client docs, proposals, emails, meeting notes, and intake material. | Created / ensured | Keep sensitive source material local and intentional. |
-| `references/source-app/` | Existing app, code, assets, exports, or source-system material. | Created / ensured | Use when there is a source app or prior implementation. |
-| `references/platform/` | Platform notes, repo notes, hosting notes, and integration context. | Created / ensured | Capture platform assumptions before implementation. |
-| `samples/` | Sample data, exports, workbooks, fixtures, and generated examples. | Created / ensured | Avoid secrets and credentials in samples. |
-| `planning/architect-packs/` | Architect Pack files before importer dry-run/apply. | Created / ensured | After applying a pack, build from `planning/sprints/`. |
+| `references/client-docs/` | Client docs, proposals, emails, meeting notes, intake material. | Created / ensured | |
+| `references/source-app/` | Existing app, code, assets, exports, source-system material. | In use | Now holds the two real sheet CSV exports for Sprint 003. |
+| `references/platform/` | Platform notes, repo notes, hosting notes, integration context. | Created / ensured | |
+| `samples/` | Sample data, exports, workbooks, fixtures, generated examples. | Created / ensured | |
+| `planning/architect-packs/` | Architect Pack files before importer dry-run/apply. | Created / ensured | |
