@@ -1,0 +1,41 @@
+Week 15-16,,,,,,,,,,,,,,Adj Key:,,
+Date,Day,Check-in,Check-out,ADJ./Hours,,Check-in 2,Check-out 2,Break Hours,Raw Hours,Work Hours,,,,x,Break,Input
+Apr-4,Sat,,,,0,,,0,0.00,0.00,,,,v,Vacation,Input
+Apr-5,Sun,,,,0,,,0,0.00,0.00,,,,h,Paid Holday/ Leave,Input
+Apr-6,Mon,,,h,6.4,,,0,6.40,6.40,,,,s,Sick ,Input
+Apr-7,Tue,8:30,10:40,,,12:00,14:30,0,4.67,4.67,,,,"""Blank""",No adjustment,
+Apr-8,Wed,,,s,8,,,0,8.00,8.00,,,,P,Paternity Leave,Input
+Apr-9,Thu,8:00,13:00,s,3,,,0,8.00,8.00,Week Summary,,,,,
+Apr-10,Fri,,,s,8,,,0,8.00,8.00,32,Target,,Paid Holiday's,,
+,,,,,,,,,Actual,35.07,3.07,Over,,July 4th - Independence Day (Friday),,
+,,From Last Week,,Under,,-21.08,Rollover Adjustment,,Under,-18.02,,,,August 15th - Assumption of the Blessed Virgin Mary (Friday) - Holy Day of Obligation,,
+Apr-11,Sat,6:00,8:00,,0,,,0,2.00,2.00,,,,September 1st - Labor Day,,
+Apr-12,Sun,,,,0,,,0,0.00,0.00,,,,,,
+Apr-13,Mon,,,,0,,,0,0.00,0.00,,,,,,
+Apr-14,Tue,7:45,11:45,,0,13:30,15:00,0,5.50,5.50,,,,,,
+Apr-15,Wed,8:00,15:00,,0,,,0,7.00,7.00,,,,Paternity Leave Calculator,,
+Apr-16,Thu,,,s,6.4,,,0,6.40,6.40,Week Summary,,,Total,Used,Remaining
+Apr-17,Fri,,,p,6.4,,,0,6.40,6.40,32,Target,,64,23.2,40.8
+,,,,,,,,,Actual,27.30,-4.70,Under,,,,
+,,From Last Week,,Under,,-18.02,Rollover Adjustment,,Under,-22.72,,,,,,
+,,,,,,,,,,,,,,,,
+Week 17-18,,,,,,,,,,,,,,,,
+Date,Day,Check-in,Check-out,ADJ./Hours,,Check-in 2,Check-out 2,Break Hours,Raw Hours,Work Hours,,,,,,
+Apr-18,Sat,,,,0,,,0,0.00,0.00,,,,,,
+Apr-19,Sun,,,,,,,0,0.00,0.00,,,,,,
+Apr-20,Mon,,,,0,,,0,0.00,0.00,,,,,,
+Apr-21,Tue,,,p,6.4,,,0,6.40,6.40,,,,,,
+Apr-22,Wed,8:00,15:00,,0,,,0,7.00,7.00,,,,,,
+Apr-23,Thu,8:00,12:00,p,4,,,0,8.00,8.00,Week Summary,,,,,
+Apr-24,Fri,,,v,8,,,0,8.00,8.00,32,Target,,,,
+,,,,,,,,,Actual,29.40,-2.60,Under,,,,
+,,From Last Pay Priod,,Under,,-22.72,Rollover Adjustment,,Under,-25.32,,,,,,
+Apr-25,Sat,,,,0,,,0,0.00,0.00,,,,,,
+Apr-26,Sun,,,,0,,,0,0.00,0.00,,,,,,
+Apr-27,Mon,,,,0,,,0,0.00,0.00,,,,,,
+Apr-28,Tue,8:00,15:45,,0,,,0,7.75,7.75,,,,,,
+Apr-29,Wed,8:00,13:00,,0,,,0,5.00,5.00,,,,,,
+Apr-30,Thu,8:00,14:45,,0,,,0,6.75,6.75,Week Summary,,,,,
+May-1,Fri,9:45,13:30,p,6.4,,,0,10.15,10.15,32,Target,,,,
+,,,,,,,,,Actual,29.65,-2.35,Under,,,,
+,,From Last Week,,Under,,-25.32,Rollover Adjustment,,Under,-27.67,,,,,,

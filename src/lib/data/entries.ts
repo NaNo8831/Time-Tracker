@@ -21,27 +21,6 @@ export interface DayEntryDetail {
   leaveEntries: LeaveEntryRow[];
 }
 
-export interface DayEntrySummary {
-  id: string;
-  date: IsoDate;
-  breakMinutesOverride: number | null;
-}
-
-export async function listRecentDayEntries(limit = 30): Promise<DayEntrySummary[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("day_entries")
-    .select("id, date, break_minutes_override")
-    .order("date", { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    date: row.date,
-    breakMinutesOverride: row.break_minutes_override,
-  }));
-}
-
 export async function getDayEntryDetail(date: IsoDate): Promise<DayEntryDetail> {
   const supabase = createClient();
 

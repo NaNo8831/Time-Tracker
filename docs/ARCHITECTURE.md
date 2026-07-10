@@ -1,70 +1,56 @@
 # Architecture
 
-Time Tracker v1 — architecture defined by the Architect Layer. Data model and calculation rules locked in Architect Pack 001; auth/styling/data-access in Pack 002; break model rework, rolling balance seed, and historical migration in Pack 003.
+Time Tracker v1 — architecture defined by the Architect Layer across Packs 001-004.
 
 ---
 
 ## Stack
 
-- **Application**: Next.js (App Router), TypeScript, deployed to Vercel for v1.
-- **Styling**: Tailwind CSS.
-- **Database**: Supabase (Postgres).
-- **Auth**: Supabase Auth, email/password, single account (no signup flow).
-- **Data access**: Next.js Server Actions calling the Supabase client directly — no separate REST/GraphQL API layer.
-- **Hosting**: Vercel for v1.
+Next.js (App Router), TypeScript, Tailwind CSS, Supabase (Postgres + Auth via `@supabase/ssr`), Vercel, Vitest.
 
 ## Users & Access
 
-Single user, personal use. Every route except the login screen requires a valid session (enforced via Next.js middleware).
+Single user, personal use, gated by Supabase email/password login via middleware.
 
 ## Data Model
 
 | Table | Purpose | Key Fields |
 |---|---|---|
-| `day_entries` | One row per date. | `date` (unique), `break_minutes_override` (nullable, multiple of 15) |
-| `sessions` | One or more check-in/check-out pairs per day. | `day_entry_id`, `check_in`, `check_out` |
-| `leave_entries` | Vacation/sick/paternity hours logged against a date. | `date`, `leave_type`, `hours` |
-| `holidays` | User-maintained list of recognized paid holidays. | `date`, `label` |
+| `day_entries` | One row per date. | `date` (unique), `break_minutes_override` |
+| `sessions` | Check-in/check-out pairs per day. | `day_entry_id`, `check_in`, `check_out` |
+| `leave_entries` | Leave hours logged against a date. | `date`, `leave_type`, `hours` |
+| `holidays` | Recognized paid holidays. | `date`, `label` |
 | `weekly_target_settings` | Effective-dated weekly target hours. | `hours`, `effective_date` (unique) |
-| `break_duration_settings` | Effective-dated default break duration (minutes). Renamed from `lunch_duration_settings` in Sprint 003. | `minutes`, `effective_date` (unique) |
-| `standard_workday_hours_settings` | Effective-dated hours credited for a holiday. | `hours`, `effective_date` (unique) |
+| `break_duration_settings` | Effective-dated default break duration. | `minutes`, `effective_date` (unique) |
+| `standard_workday_hours_settings` | Effective-dated holiday-credit hours. | `hours`, `effective_date` (unique) |
 | `leave_banks` | Effective-dated total hours per leave type. | `leave_type`, `total_hours`, `effective_date` (unique per type) |
-| `rolling_balance_seed` | **New in Sprint 003.** A single-row starting offset for Rolling Balance, representing pre-app history (e.g., a source spreadsheet's running total). No Settings UI — set once via SQL. | `balance`, `note` |
+| `rolling_balance_seed` | One-time starting offset for Rolling Balance. No UI. | `balance`, `note` |
+| `physical_year_settings` | **New Sprint 004.** User-entered year date ranges, for Weeks Left in Year. Not effective-dated — looked up by "which range contains this date." | `start_date`, `end_date`, `note` |
 
-All effective-dated tables share one lookup rule: the value "in effect" on a given date is the most recent row with `effective_date <= that date`. Each has a unique constraint preventing two entries for the same effective date (same leave type + date for `leave_banks`).
+All effective-dated tables share the "most recent entry with effective_date <= the date being calculated" lookup rule.
 
-**Critical**: `weekly_target_settings`' earliest `effective_date` determines the first week the entire app computes (`mondayOf(earliest effective_date)` through the current week, every week in between, even with no data). Setting it earlier than real tracked history creates phantom zero-actual weeks that silently corrupt Rolling Balance. Always set it to the Monday of the actual earliest tracked week.
-
-### Row Level Security
-
-RLS is enabled on every table above (including `rolling_balance_seed`). Each has one policy permitting all operations to any authenticated session — not scoped by `user_id`, since only one account exists in v1.
+**Critical**: the earliest `weekly_target_settings` entry's `effective_date` determines the first week the whole app computes. As of Sprint 004 this is `2026-01-12`.
 
 ## Calculation Rules
 
-1. **Raw Hours (day)** = sum of `(check_out minus check_in)` across all sessions for that day.
-2. **Break Deduction (day)** = the per-day manual override if set (multiple of 15 minutes), otherwise the break duration setting in effect that date. Applied once per day, independent of session count.
-3. **Leave Hours (day)** = sum of that date's `leave_entries` hours, across all types.
-4. **Holiday Credit (day)** = the standard workday hours setting in effect that date, if the date is in `holidays`; otherwise 0.
-5. **Work Hours (day)** = Raw Hours minus Break Deduction plus Leave Hours plus Holiday Credit.
-6. **Weekly Actual Hours** = sum of Work Hours for each day in the week.
-7. **Weekly Delta** = Weekly Actual Hours minus Weekly Target Hours, using the target in effect on that week's Monday.
-8. **Rolling Balance** = the Rolling Balance Seed (0 if unset) plus the cumulative sum of Weekly Delta across all tracked weeks.
-9. **Leave Bank Remaining (type)** = latest `leave_banks` total for that type minus sum of that type's `leave_entries` hours logged on/after that bank entry's `effective_date`.
+Rules 1-12 (Raw Hours through Effective-dating) are unchanged since Sprint 003 — see `planning/DOMAIN.md`.
 
-The calculation engine lives in `src/lib/calculations/` as standalone, UI-independent, unit-tested modules.
+**New, Sprint 004** (Rules 13-17 in `planning/DOMAIN.md`): ISO 8601 Week Number; Pay Period (two ISO weeks, odd/even paired); Weeks Left in Year (from the matching Physical Year record); the 53-ISO-week-year pairing edge case is a known, accepted limitation.
 
-## Screens (v1)
+`src/lib/calculations/isoWeek.ts` and `physicalYear.ts` implement these as standalone, UI-independent, unit-tested modules, same pattern as the rest of `src/lib/calculations/`.
 
-- **Login** — Supabase Auth email/password sign-in.
-- **Weekly Recap** (landing page) — hours vs. target, rolling balance, leave balances remaining, plus a trailing 14-day history table (raw/break/total/other-with-hover-breakdown).
-- **Daily Entry** — sessions, break override, leave hours by type, for a given date. Auto-opens to today with a date switcher.
-- **History** — every tracked week grouped into two-week chunks (naive chronological pairing, not real pay-period alignment), most recent first.
-- **Settings / Preferences** — weekly target, break duration, standard workday hours, leave banks (nested inside Paid Holidays), and holiday list, each with history where applicable.
+## Screens (v1, updated Sprint 004)
+
+- **Login** — Supabase Auth sign-in.
+- **Daily Entry** — first in nav order. Sessions, break override, leave hours. No "Recent Entries" list; reachable via day-row links from the Pay Period Recap.
+- **Pay Period Recap** (landing page) — Week 1 + Week 2 stats, Rolling Balance, Leave Remaining, Weeks Left in Year, a clickable 14-day list bound to the period (not a rolling window), Prev/Next period navigation.
+- **History** — every fully-elapsed pay period (excludes the current one), ISO odd/even paired.
+- **Settings** — weekly target, break duration, standard workday hours (under Paid Holidays), leave banks, holidays, and the new Physical Year list.
 
 ## Migration
 
-One-time SQL scripts, run directly by the user against Supabase — never an in-app feature (single-user tool, strictly one-time operations). Sprint 003 covers 2026-05-02–2026-06-26. Earlier data is a separate, later sprint.
+One-time SQL scripts, run directly by the user. As of Sprint 004, imports run against a LIVE database with real data — strictly additive, no destructive operations, with mandatory regression verification against every previously-proofed number.
 
 ## Out of Scope for v1
 
-See `planning/DOMAIN.md` — Out of Scope for v1.
+See `planning/DOMAIN.md`.

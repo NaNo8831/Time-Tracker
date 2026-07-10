@@ -36,14 +36,31 @@ export interface RecapResult {
 
 const LEAVE_TYPES: LeaveType[] = ["vacation", "sick", "paternity"];
 
+export interface BuildWeeklyRecapOptions {
+  /**
+   * Extend the computed weeks[] array through (at least) this week's
+   * Monday, even if it's after `input.today`. Used only by
+   * buildPayPeriodRecap() so a period's Week 2 exists in the result even
+   * when it hasn't happened yet — days after `today` still correctly
+   * contribute 0 actual hours (the existing day-loop below already stops
+   * at `today`). Do NOT pass this from History tab or Leave Bank code —
+   * those must stay bounded to `today` (planning/RISKS.md, 2026-07-09).
+   */
+  extendThroughWeek?: IsoDate;
+}
+
 /**
  * Builds the full weekly recap: every tracked week from the earliest weekly
- * target's effective date through the current week, each week's actual vs.
- * target hours, and the rolling balance carried forward across all of them
+ * target's effective date through the current week (or further, if
+ * `options.extendThroughWeek` is set), each week's actual vs. target hours,
+ * and the rolling balance carried forward across all of them
  * (planning/DOMAIN.md Business Rules 3-8). Returns null when no weekly
  * target has been set yet (nothing to compute).
  */
-export function buildWeeklyRecap(input: RecapInput): RecapResult | null {
+export function buildWeeklyRecap(
+  input: RecapInput,
+  options: BuildWeeklyRecapOptions = {}
+): RecapResult | null {
   if (input.weeklyTargetSettings.length === 0) return null;
 
   const earliestTargetDate = [...input.weeklyTargetSettings]
@@ -51,9 +68,13 @@ export function buildWeeklyRecap(input: RecapInput): RecapResult | null {
     .sort()[0];
   const startMonday = mondayOf(earliestTargetDate);
   const currentWeekMonday = mondayOf(input.today);
+  const endWeekMonday =
+    options.extendThroughWeek && options.extendThroughWeek > currentWeekMonday
+      ? options.extendThroughWeek
+      : currentWeekMonday;
 
   const weekStarts: IsoDate[] = [];
-  for (let week = startMonday; week <= currentWeekMonday; week = addDays(week, 7)) {
+  for (let week = startMonday; week <= endWeekMonday; week = addDays(week, 7)) {
     weekStarts.push(week);
   }
 

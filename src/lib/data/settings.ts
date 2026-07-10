@@ -33,6 +33,13 @@ export interface Holiday {
   label: string;
 }
 
+export interface PhysicalYear {
+  id: string;
+  startDate: IsoDate;
+  endDate: IsoDate;
+  note: string | null;
+}
+
 export async function getWeeklyTargetSettings(): Promise<WeeklyTargetSetting[]> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -152,5 +159,38 @@ export async function addHoliday(date: IsoDate, label: string) {
 export async function removeHoliday(id: string) {
   const supabase = createClient();
   const { error } = await supabase.from("holidays").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function getPhysicalYears(): Promise<PhysicalYear[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("physical_year_settings")
+    .select("id, start_date, end_date, note")
+    .order("start_date", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    note: row.note,
+  }));
+}
+
+export async function addPhysicalYear(
+  startDate: IsoDate,
+  endDate: IsoDate,
+  note: string | null
+) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("physical_year_settings")
+    .insert({ start_date: startDate, end_date: endDate, note });
+  if (error) throw error;
+}
+
+export async function removePhysicalYear(id: string) {
+  const supabase = createClient();
+  const { error } = await supabase.from("physical_year_settings").delete().eq("id", id);
   if (error) throw error;
 }

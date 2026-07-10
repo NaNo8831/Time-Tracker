@@ -1,5 +1,6 @@
 import type { IsoDate } from "@/lib/types";
 import { addDays } from "./dates";
+import { payPeriodWeek1Start } from "./isoWeek";
 import type { WeekSummary } from "./recap";
 
 export interface PeriodSummary {
@@ -8,40 +9,41 @@ export interface PeriodSummary {
   actualHours: number;
   targetHours: number;
   delta: number;
-  /** The rolling balance as of the end of this period (the last week's value — rolling balance is already cumulative). */
+  /** The rolling balance as of the end of this period (Week 2's value — rolling balance is already cumulative). */
   rollingBalance: number;
   weeks: WeekSummary[];
 }
 
 /**
  * Groups already-computed weeks (oldest first, as returned by
- * buildWeeklyRecap) into chronological chunks of `weeksPerPeriod` weeks —
- * "two week chunks" by default. The final chunk may be shorter if the week
- * count doesn't divide evenly. This is a simple pairing of consecutive
- * tracked weeks, not aligned to any specific pay-period anchor date — that
- * remains a deferred idea (see planning/QUESTIONS.md).
+ * buildWeeklyRecap) into Pay Periods using the ISO odd/even week rule
+ * (planning/DOMAIN.md Business Rule 14), NOT chronological pairing since
+ * tracking began. A period at either end of the tracked range may have
+ * only one week if the corresponding partner week falls outside what's
+ * been computed — that's expected, not a bug.
  */
-export function chunkWeeksIntoPeriods(
-  weeks: WeekSummary[],
-  weeksPerPeriod = 2
-): PeriodSummary[] {
-  const periods: PeriodSummary[] = [];
+export function groupWeeksIntoPayPeriods(weeks: WeekSummary[]): PeriodSummary[] {
+  const byPeriodStart = new Map<IsoDate, WeekSummary[]>();
 
-  for (let i = 0; i < weeks.length; i += weeksPerPeriod) {
-    const chunk = weeks.slice(i, i + weeksPerPeriod);
-    const periodStart = chunk[0].weekStart;
-    const lastWeekStart = chunk[chunk.length - 1].weekStart;
-
-    periods.push({
-      periodStart,
-      periodEnd: addDays(lastWeekStart, 6),
-      actualHours: chunk.reduce((sum, week) => sum + week.actualHours, 0),
-      targetHours: chunk.reduce((sum, week) => sum + week.targetHours, 0),
-      delta: chunk.reduce((sum, week) => sum + week.delta, 0),
-      rollingBalance: chunk[chunk.length - 1].rollingBalance,
-      weeks: chunk,
-    });
+  for (const week of weeks) {
+    const periodStart = payPeriodWeek1Start(week.weekStart);
+    const bucket = byPeriodStart.get(periodStart) ?? [];
+    bucket.push(week);
+    byPeriodStart.set(periodStart, bucket);
   }
 
-  return periods;
+  return [...byPeriodStart.entries()]
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([periodStart, periodWeeks]) => {
+      const lastWeekStart = periodWeeks[periodWeeks.length - 1].weekStart;
+      return {
+        periodStart,
+        periodEnd: addDays(lastWeekStart, 6),
+        actualHours: periodWeeks.reduce((sum, week) => sum + week.actualHours, 0),
+        targetHours: periodWeeks.reduce((sum, week) => sum + week.targetHours, 0),
+        delta: periodWeeks.reduce((sum, week) => sum + week.delta, 0),
+        rollingBalance: periodWeeks[periodWeeks.length - 1].rollingBalance,
+        weeks: periodWeeks,
+      };
+    });
 }

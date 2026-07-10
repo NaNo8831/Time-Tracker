@@ -2,6 +2,7 @@ import {
   getBreakDurationSettings,
   getHolidays,
   getLeaveBankEntries,
+  getPhysicalYears,
   getStandardWorkdayHoursSettings,
   getWeeklyTargetSettings,
 } from "@/lib/data/settings";
@@ -10,9 +11,11 @@ import {
   addBreakDuration,
   addHoliday,
   addLeaveBank,
+  addPhysicalYear,
   addStandardWorkdayHours,
   addWeeklyTarget,
   deleteHoliday,
+  deletePhysicalYear,
 } from "./actions";
 
 export default async function SettingsPage({
@@ -20,13 +23,14 @@ export default async function SettingsPage({
 }: {
   searchParams: { error?: string };
 }) {
-  const [weeklyTargets, breakDurations, standardWorkdayHours, leaveBanks, holidays] =
+  const [weeklyTargets, breakDurations, standardWorkdayHours, leaveBanks, holidays, physicalYears] =
     await Promise.all([
       getWeeklyTargetSettings(),
       getBreakDurationSettings(),
       getStandardWorkdayHoursSettings(),
       getLeaveBankEntries(),
       getHolidays(),
+      getPhysicalYears(),
     ]);
 
   return (
@@ -282,6 +286,68 @@ export default async function SettingsPage({
           </div>
         ))}
         <hr className="border-slate-200" />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-base font-medium text-slate-900">Physical Year</h2>
+        <p className="text-sm text-slate-600">
+          Used to compute "Weeks Left in Year" on the Recap page. Enter the start and
+          end date of your organization's physical year — it doesn't need to match the
+          calendar year.
+        </p>
+        <form action={addPhysicalYear} className="flex flex-wrap items-end gap-3">
+          <div>
+            <label className="block text-xs text-slate-600">Start date</label>
+            <input
+              name="startDate"
+              type="date"
+              required
+              className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-600">End date</label>
+            <input
+              name="endDate"
+              type="date"
+              required
+              className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-600">Note (optional)</label>
+            <input
+              name="note"
+              type="text"
+              className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+            />
+          </div>
+          <button
+            type="submit"
+            className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700"
+          >
+            Add entry
+          </button>
+        </form>
+        <ul className="divide-y divide-slate-200 text-sm">
+          {physicalYears.map((y) => (
+            <li key={y.id} className="flex items-center justify-between py-1.5">
+              <span>
+                {y.startDate} – {y.endDate}
+                {y.note ? ` — ${y.note}` : ""}
+              </span>
+              <form action={deletePhysicalYear}>
+                <input type="hidden" name="id" value={y.id} />
+                <button type="submit" className="text-xs text-red-600 hover:underline">
+                  Remove
+                </button>
+              </form>
+            </li>
+          ))}
+          {physicalYears.length === 0 && (
+            <li className="py-1.5 text-slate-500">No physical years added yet.</li>
+          )}
+        </ul>
       </section>
     </main>
   );

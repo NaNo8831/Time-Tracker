@@ -1,9 +1,12 @@
-import { buildWeeklyRecap } from "@/lib/calculations/recap";
+import Link from "next/link";
+import { buildPayPeriodRecap } from "@/lib/calculations/payPeriodRecap";
+import { isoWeekNumber, payPeriodWeek1Start } from "@/lib/calculations/isoWeek";
+import { weeksLeftInYear } from "@/lib/calculations/physicalYear";
 import { addDays } from "@/lib/calculations/dates";
-import { summarizeDailyHistory } from "@/lib/calculations/history";
 import { getDailyHistoryRows, getRecapInput } from "@/lib/data/recap";
-
-const HISTORY_DAYS = 14;
+import { getPhysicalYears } from "@/lib/data/settings";
+import type { WeekSummary } from "@/lib/calculations/recap";
+import type { IsoDate } from "@/lib/types";
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -14,6 +17,18 @@ function formatHours(hours: number): string {
   return `${sign}${hours.toFixed(2)} hrs`;
 }
 
+function formatWeekRange(weekStart: IsoDate): string {
+  const start = new Date(`${weekStart}T00:00:00Z`);
+  const end = new Date(`${addDays(weekStart, 6)}T00:00:00Z`);
+  const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  return `${fmt(start)} - ${fmt(end)}`;
+}
+
+function isWeekend(date: IsoDate): boolean {
+  const day = new Date(`${date}T00:00:00Z`).getUTCDay();
+  return day === 0 || day === 6;
+}
+
 function othersBreakdownTitle(
   byType: { vacation: number; sick: number; paternity: number },
   holidayCredit: number
@@ -21,21 +36,21 @@ function othersBreakdownTitle(
   return `Vacation: ${byType.vacation.toFixed(2)} · Sick: ${byType.sick.toFixed(2)} · Paternity: ${byType.paternity.toFixed(2)} · Holiday: ${holidayCredit.toFixed(2)}`;
 }
 
-export default async function WeeklyRecapPage() {
+export default async function PayPeriodRecapPage({
+  searchParams,
+}: {
+  searchParams: { period?: string };
+}) {
   const today = todayIso();
-  const historyStart = addDays(today, -(HISTORY_DAYS - 1));
+  const week1Start = searchParams.period ?? payPeriodWeek1Start(today);
+  const week2Start = addDays(week1Start, 7);
 
-  const [input, historyRows] = await Promise.all([
-    getRecapInput(today),
-    getDailyHistoryRows(historyStart, today),
-  ]);
-  const recap = input ? buildWeeklyRecap(input) : null;
-  const historySummary = summarizeDailyHistory(historyRows);
+  const [input, physicalYears] = await Promise.all([getRecapInput(today), getPhysicalYears()]);
 
-  if (!recap) {
+  if (!input) {
     return (
       <main className="mx-auto max-w-2xl space-y-4 px-4 py-8">
-        <h1 className="text-xl font-semibold text-slate-900">Weekly Recap</h1>
+        <h1 className="text-xl font-semibold text-slate-900">Pay Period Recap</h1>
         <p className="text-sm text-slate-600">
           Set a weekly target hours value in Settings to see your recap here.
         </p>
@@ -43,34 +58,59 @@ export default async function WeeklyRecapPage() {
     );
   }
 
-  const { currentWeek, leaveBankRemaining } = recap;
+  const payPeriod = buildPayPeriodRecap(input, week1Start);
+
+  if (!payPeriod) {
+    return (
+      <main className="mx-auto max-w-2xl space-y-4 px-4 py-8">
+        <h1 className="text-xl font-semibold text-slate-900">Pay Period Recap</h1>
+        <p className="text-sm text-slate-600">This period is before your tracked history.</p>
+        <Link href={`/?period=${week2Start}`} className="text-sm text-blue-600 underline">
+          Next period →
+        </Link>
+      </main>
+    );
+  }
+
+  const historyRows = await getDailyHistoryRows(week1Start, addDays(week1Start, 13));
+  const weeksLeft = weeksLeftInYear(
+    physicalYears.map((y) => ({ startDate: y.startDate, endDate: y.endDate })),
+    today
+  );
+
+  const { week1, week2, rollingBalance, leaveBankRemaining } = payPeriod;
+  const prevPeriod = addDays(week1Start, -14);
+  const nextPeriod = addDays(week1Start, 14);
 
   return (
     <main className="mx-auto max-w-2xl space-y-8 px-4 py-8">
-      <h1 className="text-xl font-semibold text-slate-900">Weekly Recap</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-slate-900">Pay Period Recap</h1>
+        <div className="flex gap-4 text-sm">
+          <Link href={`/?period=${prevPeriod}`} className="text-blue-600 underline">
+            ← Prev
+          </Link>
+          <Link href={`/?period=${nextPeriod}`} className="text-blue-600 underline">
+            Next →
+          </Link>
+        </div>
+      </div>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="This Week" value={`${currentWeek.actualHours.toFixed(2)} hrs`} />
-        <StatCard label="Target" value={`${currentWeek.targetHours.toFixed(2)} hrs`} />
-        <StatCard
-          label="Delta"
-          value={formatHours(currentWeek.delta)}
-          tone={currentWeek.delta < 0 ? "negative" : "positive"}
-        />
-      </section>
+      <WeekSection title={`Week ${isoWeekNumber(week1.weekStart)}`} week={week1} />
+      <WeekSection title={`Week ${isoWeekNumber(week2.weekStart)}`} week={week2} />
 
       <section>
         <StatCard
           label="Rolling Balance"
-          value={formatHours(currentWeek.rollingBalance)}
-          tone={currentWeek.rollingBalance < 0 ? "negative" : "positive"}
+          value={formatHours(rollingBalance)}
+          tone={rollingBalance < 0 ? "negative" : "positive"}
           large
         />
       </section>
 
       <section className="space-y-2">
         <h2 className="text-base font-medium text-slate-900">Leave Remaining</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           {(Object.keys(leaveBankRemaining) as (keyof typeof leaveBankRemaining)[]).map(
             (type) => (
               <StatCard
@@ -82,11 +122,17 @@ export default async function WeeklyRecapPage() {
               />
             )
           )}
+          <StatCard
+            label="Weeks Left in Year"
+            value={weeksLeft === null ? "Not set" : `${weeksLeft}`}
+          />
         </div>
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-base font-medium text-slate-900">Last {HISTORY_DAYS} Days</h2>
+        <h2 className="text-base font-medium text-slate-900">
+          {formatWeekRange(week1Start)} – {formatWeekRange(week2Start)}
+        </h2>
         <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead>
@@ -104,9 +150,21 @@ export default async function WeeklyRecapPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {historyRows.map((row) => (
-                <tr key={row.date}>
-                  <td className="px-3 py-1.5">{row.date}</td>
+              {historyRows.map((row, index) => (
+                <tr
+                  key={row.date}
+                  className={[
+                    index === 7 ? "border-t-2 border-slate-300" : "",
+                    isWeekend(row.date) ? "bg-slate-50" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ") || undefined}
+                >
+                  <td className="px-3 py-1.5">
+                    <Link href={`/entries/${row.date}`} className="text-blue-600 underline">
+                      {row.date}
+                    </Link>
+                  </td>
                   <td className="px-3 py-1.5 text-right">{row.rawHours.toFixed(2)}</td>
                   <td className="px-3 py-1.5 text-right">{row.breakHours.toFixed(2)}</td>
                   <td className="px-3 py-1.5 text-right font-medium">{row.paidHours.toFixed(2)}</td>
@@ -119,27 +177,29 @@ export default async function WeeklyRecapPage() {
                 </tr>
               ))}
             </tbody>
-            <tfoot>
-              <tr className="border-t border-slate-200 font-semibold">
-                <td className="px-3 py-2">Total</td>
-                <td className="px-3 py-2 text-right">{historySummary.totalRawHours.toFixed(2)}</td>
-                <td className="px-3 py-2 text-right">{historySummary.totalBreakHours.toFixed(2)}</td>
-                <td className="px-3 py-2 text-right">{historySummary.totalPaidHours.toFixed(2)}</td>
-                <td
-                  className="px-3 py-2 text-right underline decoration-dotted"
-                  title={othersBreakdownTitle(
-                    historySummary.totalLeaveHoursByType,
-                    historySummary.totalHolidayCredit
-                  )}
-                >
-                  {historySummary.totalOthersTotal.toFixed(2)}
-                </td>
-              </tr>
-            </tfoot>
           </table>
         </div>
       </section>
     </main>
+  );
+}
+
+function WeekSection({ title, week }: { title: string; week: WeekSummary }) {
+  return (
+    <section className="space-y-2">
+      <h2 className="text-base font-medium text-slate-900">
+        {title} · {formatWeekRange(week.weekStart)}
+      </h2>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard label="Actual" value={`${week.actualHours.toFixed(2)} hrs`} />
+        <StatCard label="Target" value={`${week.targetHours.toFixed(2)} hrs`} />
+        <StatCard
+          label="Delta"
+          value={formatHours(week.delta)}
+          tone={week.delta < 0 ? "negative" : "positive"}
+        />
+      </div>
+    </section>
   );
 }
 

@@ -10,11 +10,11 @@ export default function Nav() {
     <nav className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
         <div className="flex gap-4 text-sm font-medium text-slate-700">
-          <Link href="/" className="hover:text-slate-900">
-            Recap
-          </Link>
           <Link href={`/entries/${todayIso()}`} className="hover:text-slate-900">
             Daily Entry
+          </Link>
+          <Link href="/" className="hover:text-slate-900">
+            Recap
           </Link>
           <Link href="/history" className="hover:text-slate-900">
             History

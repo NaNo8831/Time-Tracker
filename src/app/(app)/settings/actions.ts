@@ -109,3 +109,19 @@ export async function deleteHoliday(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/history");
 }
+
+export async function addPhysicalYear(formData: FormData) {
+  const startDate = String(formData.get("startDate"));
+  const endDate = String(formData.get("endDate"));
+  const note = formData.get("note") ? String(formData.get("note")) : null;
+  await settingsData.addPhysicalYear(startDate, endDate, note);
+  revalidatePath("/settings");
+  revalidatePath("/");
+}
+
+export async function deletePhysicalYear(formData: FormData) {
+  const id = String(formData.get("id"));
+  await settingsData.removePhysicalYear(id);
+  revalidatePath("/settings");
+  revalidatePath("/");
+}

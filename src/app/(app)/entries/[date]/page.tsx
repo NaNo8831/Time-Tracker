@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { getDayEntryDetail, listRecentDayEntries } from "@/lib/data/entries";
+import { getDayEntryDetail } from "@/lib/data/entries";
 import { LEAVE_TYPES } from "@/lib/types";
 import TimeSelect from "@/components/TimeSelect";
 import BreakMinutesSelect from "@/components/BreakMinutesSelect";
@@ -24,10 +23,7 @@ export default async function DayEntryPage({
   searchParams: { error?: string };
 }) {
   const { date } = params;
-  const [entry, recent] = await Promise.all([
-    getDayEntryDetail(date),
-    listRecentDayEntries(),
-  ]);
+  const entry = await getDayEntryDetail(date);
 
   return (
     <main className="mx-auto max-w-2xl space-y-8 px-4 py-8">
@@ -169,34 +165,6 @@ export default async function DayEntryPage({
           ))}
           {entry.leaveEntries.length === 0 && (
             <li className="py-1.5 text-slate-500">No leave logged for this day.</li>
-          )}
-        </ul>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-base font-medium text-slate-900">Recent Entries</h2>
-        <ul className="divide-y divide-slate-200 text-sm">
-          {recent.map((recentEntry) => (
-            <li key={recentEntry.id} className="py-1.5">
-              <Link
-                href={`/entries/${recentEntry.date}`}
-                className={
-                  recentEntry.date === date
-                    ? "font-medium text-slate-900"
-                    : "text-slate-700 hover:underline"
-                }
-              >
-                {recentEntry.date}
-              </Link>
-              {recentEntry.breakMinutesOverride !== null && (
-                <span className="ml-2 text-xs text-slate-500">
-                  break override: {recentEntry.breakMinutesOverride} min
-                </span>
-              )}
-            </li>
-          ))}
-          {recent.length === 0 && (
-            <li className="py-1.5 text-slate-500">No entries logged yet.</li>
           )}
         </ul>
       </section>

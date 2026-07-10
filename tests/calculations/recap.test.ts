@@ -74,6 +74,33 @@ describe("buildWeeklyRecap", () => {
     expect(pastWeekBalanceAfter).toBe(pastWeekBalanceBefore);
   });
 
+  it("extendThroughWeek includes a future week with zero actual hours, without affecting past weeks", () => {
+    // today is mid-week-1 (2026-06-01, a Monday); extend through week 2
+    // (2026-06-08) so a Pay Period Recap can show it even though it hasn't
+    // happened yet.
+    const result = buildWeeklyRecap(
+      baseInput({ today: "2026-06-01" }),
+      { extendThroughWeek: "2026-06-08" }
+    );
+
+    expect(result!.weeks).toHaveLength(2);
+    expect(result!.weeks[1].weekStart).toBe("2026-06-08");
+    expect(result!.weeks[1].actualHours).toBe(0); // future week, nothing logged yet
+    expect(result!.weeks[1].delta).toBe(-32);
+    // Week 1 is unaffected by the extension.
+    expect(result!.weeks[0].actualHours).toBe(0);
+  });
+
+  it("extendThroughWeek has no effect when it's earlier than the natural current week", () => {
+    const withoutExtend = buildWeeklyRecap(baseInput({ today: "2026-06-15" }));
+    const withExtend = buildWeeklyRecap(
+      baseInput({ today: "2026-06-15" }),
+      { extendThroughWeek: "2026-06-01" }
+    );
+
+    expect(withExtend!.weeks).toEqual(withoutExtend!.weeks);
+  });
+
   it("computes leave bank remaining per type", () => {
     const result = buildWeeklyRecap(
       baseInput({

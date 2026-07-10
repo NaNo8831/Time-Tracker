@@ -1,5 +1,6 @@
 import { buildWeeklyRecap } from "@/lib/calculations/recap";
-import { chunkWeeksIntoPeriods } from "@/lib/calculations/periods";
+import { groupWeeksIntoPayPeriods } from "@/lib/calculations/periods";
+import { payPeriodWeek1Start } from "@/lib/calculations/isoWeek";
 import { getRecapInput } from "@/lib/data/recap";
 
 function todayIso(): string {
@@ -31,15 +32,19 @@ export default async function HistoryPage() {
     );
   }
 
-  // Oldest-first internally; show most recent period first.
-  const periods = chunkWeeksIntoPeriods(recap.weeks).reverse();
+  // Oldest-first internally; show most recent period first. The current
+  // (in-progress) pay period is shown on the Recap page, not here.
+  const currentPeriodStart = payPeriodWeek1Start(today);
+  const periods = groupWeeksIntoPayPeriods(recap.weeks)
+    .filter((period) => period.periodStart !== currentPeriodStart)
+    .reverse();
 
   return (
     <main className="mx-auto max-w-3xl space-y-4 px-4 py-8">
       <h1 className="text-xl font-semibold text-slate-900">History</h1>
       <p className="text-sm text-slate-600">
-        Every tracked week, grouped into two-week chunks, most recent first. Rolling
-        balance is the running total as of the end of that period.
+        Every completed pay period, most recent first. Rolling balance is the running
+        total as of the end of that period.
       </p>
 
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">

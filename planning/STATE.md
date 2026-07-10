@@ -8,31 +8,29 @@
 
 ## Current Phase
 
-Sprint 003 Built — Pending Live Import Verification
+Sprint 004 Complete — Pay Period Recap Redesign + Full-Year Historical Import (code done; SQL handed to user to run)
 
 ---
 
 ## Current Status
 
-Sprint 003 (Break Model Rework + Historical Migration) is code-complete: the break/lunch model is reworked, a Rolling Balance Seed mechanism exists, and a one-time SQL import script for 8 real weeks (2026-05-02–2026-06-26) is ready. During execution, a real correctness bug was found and fixed (see below) and the Architect Pack's own acceptance criteria were corrected. Nothing has been run against the live database yet — that's the user's next step.
+Sprint 004 code is complete, verified (74/74 unit tests, typecheck clean, production build clean), and the historical-import SQL has been independently re-derived and cross-checked to reproduce the architect's verified weekly table exactly, week by week, including the critical already-live `-27.67` boundary. Two SQL scripts are now ready for the user to run against the live Supabase project — nothing has been executed against the database yet.
 
-- 57/57 unit tests, typecheck, and production build all pass clean.
-- **A real bug was caught and fixed before it shipped**: the initial `breakDeduction()` implementation applied the default break duration to every calendar day, including days with zero sessions — this would have silently subtracted the default break from every untouched day in a week. Fixed: the default now only applies when the day has at least one session; an explicit override always applies regardless.
-- **A math error in the Architect Pack's own acceptance criteria was caught and corrected**: the original plan set `weekly_target_settings`' earliest `effective_date` to 2026-04-27 and copied the source sheet's own week-ending Rolling Balance checkpoints directly into `acceptance.md`. Neither was right — the sheet groups weeks Saturday-Friday, the app groups Monday-Sunday (an already-locked business rule), so the two conventions produce different weekly checkpoints from identical daily data. Corrected to `effective_date = 2026-05-04` (the Monday of the first full Monday-Sunday week with real activity) and an independently-recomputed 8-week Rolling Balance table. See `planning/DECISIONS.md` for the full trail.
-- Two SQL scripts are ready for the user to run, in order: `supabase/schema-migration-003-break-rework.sql`, then `supabase/migration-003-import-2026-05-02-to-2026-06-26.sql`.
-- Sprint 002 remains complete and hardened.
+- Sprint 003 remains complete and verified live (2026-05-02–2026-06-26 imported, user-confirmed correct, current hours being logged).
+- **Critical**: the new import is additive only. The live database holds real, user-verified data — no destructive operations (no TRUNCATE, no DROP) are in scope. The only mutations to already-existing rows are three settings' `effective_date` and the `rolling_balance_seed`'s value, both mathematically verified (via a standalone Node script) to reproduce every already-proofed Sprint 3 number exactly.
+- SQL run order: `supabase/schema-migration-004-physical-year.sql` first, then `supabase/migration-004-import-2026-01-12-to-2026-05-01.sql`.
 
 ---
 
 ## Active Sprint
 
-`planning/sprints/003-break-rework-and-migration/` — code complete, pending live SQL execution and verification against the corrected acceptance table.
+`planning/sprints/004-pay-period-recap-and-full-year-import/` — code complete, awaiting user to run the two SQL scripts and spot-check the app.
 
 ---
 
 ## Active Work
 
-User: run `supabase/schema-migration-003-break-rework.sql` in the Supabase SQL editor, then `supabase/migration-003-import-2026-05-02-to-2026-06-26.sql`. After that, verify the Weekly Recap / History tab against the exact Rolling Balance table in `planning/sprints/003-break-rework-and-migration/acceptance.md`.
+None. Waiting on the user to run the Sprint 004 SQL scripts against the live database and confirm the app matches expectations (see `acceptance.md`'s Historical Import spot-checks).
 
 ---
 
@@ -47,40 +45,45 @@ User: run `supabase/schema-migration-003-break-rework.sql` in the Supabase SQL e
 | Project type | Internal tool |
 | Planning folder | time-tracker/ |
 | Implementation repo | Downloaded project folder |
-| Canonical GitHub repo | UNKNOWN |
+| Canonical GitHub repo | github.com/NaNo8831/Time-Tracker |
 | Tech stack | Next.js 14 (App Router), Supabase (Postgres + Auth via `@supabase/ssr`), Tailwind CSS, Vitest, Vercel |
 
 ---
 
 ## v1 Scope Snapshot
 
-See `planning/DOMAIN.md` and `docs/ARCHITECTURE.md` for full detail. Sprint 003 adds:
+See `planning/DOMAIN.md` and `docs/ARCHITECTURE.md` for full detail. Sprint 004 adds:
 
-- Break model: `day_entries` gets a nullable `break_minutes_override` (15-minute increments) replacing the old `lunch_taken` boolean. When unset, falls back to the effective-dated `break_duration_settings` default (renamed from `lunch_duration_settings`) — but only on days that actually have sessions logged. (Built.)
-- Rolling balance seed: a new one-row `rolling_balance_seed` table lets historical rolling balance continue from the source sheet's real running total instead of starting at zero. No UI for this in v1 — set once via SQL during migration. (Built.)
-- Historical import: 2026-05-02 through 2026-06-26 (8 weeks), sourced from `references/source-app/sheet-export-2026-05-02-to-2026-05-29.csv` and `references/source-app/sheet-export-2026-05-30-to-2026-06-26.csv`. (SQL ready, not yet run.)
-- Out of scope: any data before 2026-05-02, a configurable pay-period-cycle setting (still deferred), any UI for editing the rolling balance seed, reports/analytics, multi-user.
+- **Pay Period Recap** (replaces Weekly Recap as the landing page): Week 1 + Week 2 stats (ISO-week-numbered, odd/even paired), Rolling Balance, Leave Remaining + Weeks Left in Year, a single day-by-day list for both weeks with a visual divider between them, each day clickable to `/entries/{date}`, and Prev/Next period navigation (unlimited range).
+- **Physical Year setting**: user-entered start/end date ranges (list-style, like Paid Holidays), used to compute Weeks Left in Year.
+- **History tab**: same period-list format, re-paired by ISO odd/even week instead of chronological pairing since tracking began, and excludes the current in-progress period.
+- **Daily Entry**: "Recent Entries" list removed.
+- **Nav**: reordered to Daily Entry, Recap, History, Settings.
+- **Historical import**: 2026-01-12 through 2026-05-01 (extends tracked history back from the existing 2026-05-02 start), sourced from four new CSV exports in `references/source-app/`.
+- Out of scope: employer-specific pay-period anchoring (ISO standard only, not configurable), any data before 2026-01-12, reports/analytics beyond what's described here, multi-user.
 
 ---
 
 ## Next Actions
 
-1. User runs the two SQL scripts (schema, then data) against the live Supabase project, in order.
-2. User verifies the Weekly Recap and History tab against `planning/sprints/003-break-rework-and-migration/acceptance.md`'s corrected Rolling Balance table.
-3. Once verified, plan the January-April 2026 import as its own future sprint — do not fold it into this one. That import will also need to re-check whether the break-duration-default and standard-workday-hours values from that earlier "4-day week" era differ from this sprint's.
+1. User runs `supabase/schema-migration-004-physical-year.sql` in the Supabase SQL editor.
+2. User runs `supabase/migration-004-import-2026-01-12-to-2026-05-01.sql` (after step 1).
+3. User spot-checks the app against `planning/sprints/004-pay-period-recap-and-full-year-import/acceptance.md`'s Historical Import section, and confirms Sprint 3's already-live weekly numbers (2026-05-04 onward) are unchanged.
+4. After Sprint 004 is verified live, the earliest remaining gap is 2026-01-01 through 2026-01-09 (data not available — the user's records start 2026-01-10, and 2026-01-10/11 fall outside the trackable Monday-Sunday boundary; see Decisions). No further action needed there unless the user finds additional records later.
 
 ---
 
 ## Blockers
 
-None blocking further Builder work — the code is complete and re-verified. Live import verification is blocked only on the user running the two SQL scripts.
+None for the Builder. The user still needs to run the two Sprint 004 SQL scripts against the live Supabase project (Builder has no direct DB access) — those scripts touch a database with real, live, in-use data, so extra care is warranted (see Risks).
 
 ---
 
 ## Watch Items
 
-- **Critical**: `weekly_target_settings`' earliest `effective_date` is `2026-05-04` (the Monday of the first FULL Monday-Sunday tracked week) — this is already correctly set in the SQL script; do not change it without re-deriving the acceptance table.
-- The `rolling_balance_seed` value (-27.67) and the earliest settings effective_date (2026-05-04) will both need to be replaced/adjusted when the eventual January-2026 import happens — this is expected and documented, not a bug to "fix" now.
-- Keep secrets, credentials, and private tokens out of project files.
-- Do not implement a configurable pay-period-cycle setting in this sprint — still deferred (`planning/QUESTIONS.md`).
-- No code has been committed to git yet — the working tree has been building up since Sprint 002 with nothing checked in beyond the initial scaffold commit.
+- **Critical**: this import is additive-only against a live, real, in-use database. No TRUNCATE, no destructive statements. The three settings `effective_date` changes and the `rolling_balance_seed` value change must reproduce the EXACT already-verified 8-week table from Sprint 3 (see `planning/sprints/003-break-rework-and-migration/acceptance.md`) as a hard regression check before this sprint is considered done.
+- New earliest tracked Monday: `2026-01-12`. New rolling balance seed: `-7.87`. Both mathematically derived and cross-checked against the sheet's own rollover figures and the already-live `-27.67` checkpoint — see `planning/DECISIONS.md`.
+- 2026-01-10 and 2026-01-11 (4.25 real hours on Jan-10) are NOT imported as discrete day records — they fall before the first fully-reconstructable Monday-Sunday week. This does not affect Rolling Balance accuracy (the seed already accounts for it) but means that one specific day's raw session detail is not viewable in the app. Documented, not a bug.
+- Three inferred holiday labels (2026-04-02 "Holy Thursday", 2026-04-03 "Good Friday", 2026-04-06 "Easter Monday") — editable in Settings if wrong.
+- ISO week pairing has a known, accepted edge case in 53-ISO-week years (rare) where year-boundary pairing may not alternate cleanly — not solved in v1, Micro-app tier accepts this.
+- Do not implement employer-specific pay-period anchoring — the user explicitly chose the ISO 8601 standard, not a configurable anchor.
