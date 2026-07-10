@@ -101,6 +101,18 @@ describe("buildWeeklyRecap", () => {
     expect(withExtend!.weeks).toEqual(withoutExtend!.weeks);
   });
 
+  it("counts a leave-only day (no session logged) toward that week's actual hours and delta", () => {
+    // Regression: a day with only a leave_entries row and zero sessions
+    // must still contribute its leave hours to the week's actual total —
+    // leaveHoursByDate is looked up independently of sessionsByDate in the
+    // day loop, so this should already hold; this test locks it in.
+    const leaveHoursByDate = new Map([["2026-06-02", [{ hours: 8 }]]]);
+    const result = buildWeeklyRecap(baseInput({ today: "2026-06-02", leaveHoursByDate }));
+
+    expect(result!.currentWeek.actualHours).toBe(8);
+    expect(result!.currentWeek.delta).toBe(-24); // 8 actual - 32 target
+  });
+
   it("computes leave bank remaining per type", () => {
     const result = buildWeeklyRecap(
       baseInput({

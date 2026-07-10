@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CollapsibleSection from "@/components/CollapsibleSection";
 import { buildPayPeriodRecap } from "@/lib/calculations/payPeriodRecap";
 import { isoWeekNumber, payPeriodWeek1Start } from "@/lib/calculations/isoWeek";
 import { weeksLeftInYear } from "@/lib/calculations/physicalYear";
@@ -108,9 +109,8 @@ export default async function PayPeriodRecapPage({
         />
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-base font-medium text-[var(--color-text)]">Leave Remaining</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+      <CollapsibleSection title="Leave Remaining">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           {(Object.keys(leaveBankRemaining) as (keyof typeof leaveBankRemaining)[]).map(
             (type) => (
               <StatCard
@@ -127,7 +127,7 @@ export default async function PayPeriodRecapPage({
             value={weeksLeft === null ? "Not set" : `${weeksLeft}`}
           />
         </div>
-      </section>
+      </CollapsibleSection>
 
       <section className="space-y-2">
         <h2 className="text-base font-medium text-[var(--color-text)]">
@@ -140,13 +140,13 @@ export default async function PayPeriodRecapPage({
                 <th className="px-3 py-2">Date</th>
                 <th className="px-3 py-2 text-right">Raw</th>
                 <th className="px-3 py-2 text-right">Break</th>
-                <th className="px-3 py-2 text-right">Total</th>
                 <th
                   className="px-3 py-2 text-right"
                   title="Vacation + Sick + Paternity + Holiday Credit — hover a row's value for the breakdown"
                 >
                   Other
                 </th>
+                <th className="px-3 py-2 text-right">Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-border)]">
@@ -167,13 +167,13 @@ export default async function PayPeriodRecapPage({
                   </td>
                   <td className="px-3 py-1.5 text-right">{row.rawHours.toFixed(2)}</td>
                   <td className="px-3 py-1.5 text-right">{row.breakHours.toFixed(2)}</td>
-                  <td className="px-3 py-1.5 text-right font-medium">{row.paidHours.toFixed(2)}</td>
                   <td
                     className="px-3 py-1.5 text-right underline decoration-dotted"
                     title={othersBreakdownTitle(row.leaveHoursByType, row.holidayCredit)}
                   >
                     {row.othersTotal.toFixed(2)}
                   </td>
+                  <td className="px-3 py-1.5 text-right font-medium">{row.paidHours.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
@@ -190,7 +190,7 @@ function WeekSection({ title, week }: { title: string; week: WeekSummary }) {
       <h2 className="text-base font-medium text-[var(--color-text)]">
         {title} · {formatWeekRange(week.weekStart)}
       </h2>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         <StatCard label="Actual" value={`${week.actualHours.toFixed(2)} hrs`} />
         <StatCard label="Target" value={`${week.targetHours.toFixed(2)} hrs`} />
         <StatCard
@@ -224,15 +224,17 @@ function StatCard({
         : "text-[var(--color-text)]";
 
   return (
-    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
+    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card-bg)] p-2.5 shadow-sm sm:p-4">
       <p
-        className={`text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)] ${
+        className={`text-[10px] font-medium uppercase tracking-wide text-[var(--color-text-faint)] sm:text-xs ${
           capitalizeLabel ? "capitalize" : ""
         }`}
       >
         {label}
       </p>
-      <p className={`mt-1 font-semibold ${large ? "text-3xl" : "text-xl"} ${toneClass}`}>
+      <p
+        className={`mt-1 font-semibold ${large ? "text-2xl sm:text-3xl" : "text-lg sm:text-xl"} ${toneClass}`}
+      >
         {value}
       </p>
     </div>

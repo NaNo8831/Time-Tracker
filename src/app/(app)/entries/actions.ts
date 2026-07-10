@@ -19,6 +19,7 @@ export async function setBreak(formData: FormData) {
   revalidatePath(`/entries/${date}`);
   revalidatePath("/");
   revalidatePath("/history");
+  redirect(`/entries/${date}`);
 }
 
 export async function addSession(formData: FormData) {
@@ -50,6 +51,7 @@ export async function addSession(formData: FormData) {
   revalidatePath(`/entries/${date}`);
   revalidatePath("/");
   revalidatePath("/history");
+  redirect(`/entries/${date}`);
 }
 
 export async function removeSession(formData: FormData) {
@@ -59,6 +61,7 @@ export async function removeSession(formData: FormData) {
   revalidatePath(`/entries/${date}`);
   revalidatePath("/");
   revalidatePath("/history");
+  redirect(`/entries/${date}`);
 }
 
 export async function addLeaveEntry(formData: FormData) {
@@ -69,6 +72,7 @@ export async function addLeaveEntry(formData: FormData) {
   revalidatePath(`/entries/${date}`);
   revalidatePath("/");
   revalidatePath("/history");
+  redirect(`/entries/${date}`);
 }
 
 export async function removeLeaveEntry(formData: FormData) {
@@ -78,4 +82,5 @@ export async function removeLeaveEntry(formData: FormData) {
   revalidatePath(`/entries/${date}`);
   revalidatePath("/");
   revalidatePath("/history");
+  redirect(`/entries/${date}`);
 }

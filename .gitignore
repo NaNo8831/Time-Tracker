@@ -13,6 +13,9 @@ out/
 # Local-only notes containing secrets (e.g. Supabase project password)
 supabase/information.md
 
+# Local-only reference notes (personal working docs, not part of the shared repo)
+docs/THEMING.md
+
 # Build output
 dist/
 build/
