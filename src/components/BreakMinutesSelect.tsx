@@ -26,7 +26,7 @@ export default function BreakMinutesSelect({
     <select
       name={name}
       defaultValue={defaultValue === null || defaultValue === undefined ? "" : defaultValue}
-      className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+      className="rounded-md border border-[var(--color-border-strong)] bg-[var(--color-card-bg)] px-2 py-1 text-sm text-[var(--color-text)]"
     >
       <option value="">(use default)</option>
       {MINUTE_OPTIONS.map((minutes) => (

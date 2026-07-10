@@ -50,8 +50,8 @@ export default async function PayPeriodRecapPage({
   if (!input) {
     return (
       <main className="mx-auto max-w-2xl space-y-4 px-4 py-8">
-        <h1 className="text-xl font-semibold text-slate-900">Pay Period Recap</h1>
-        <p className="text-sm text-slate-600">
+        <h1 className="text-xl font-semibold text-[var(--color-text)]">Pay Period Recap</h1>
+        <p className="text-sm text-[var(--color-text-muted)]">
           Set a weekly target hours value in Settings to see your recap here.
         </p>
       </main>
@@ -63,9 +63,9 @@ export default async function PayPeriodRecapPage({
   if (!payPeriod) {
     return (
       <main className="mx-auto max-w-2xl space-y-4 px-4 py-8">
-        <h1 className="text-xl font-semibold text-slate-900">Pay Period Recap</h1>
-        <p className="text-sm text-slate-600">This period is before your tracked history.</p>
-        <Link href={`/?period=${week2Start}`} className="text-sm text-blue-600 underline">
+        <h1 className="text-xl font-semibold text-[var(--color-text)]">Pay Period Recap</h1>
+        <p className="text-sm text-[var(--color-text-muted)]">This period is before your tracked history.</p>
+        <Link href={`/?period=${week2Start}`} className="text-sm text-[var(--color-accent)] underline">
           Next period →
         </Link>
       </main>
@@ -85,12 +85,12 @@ export default async function PayPeriodRecapPage({
   return (
     <main className="mx-auto max-w-2xl space-y-8 px-4 py-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-900">Pay Period Recap</h1>
+        <h1 className="text-xl font-semibold text-[var(--color-text)]">Pay Period Recap</h1>
         <div className="flex gap-4 text-sm">
-          <Link href={`/?period=${prevPeriod}`} className="text-blue-600 underline">
+          <Link href={`/?period=${prevPeriod}`} className="text-[var(--color-accent)] underline">
             ← Prev
           </Link>
-          <Link href={`/?period=${nextPeriod}`} className="text-blue-600 underline">
+          <Link href={`/?period=${nextPeriod}`} className="text-[var(--color-accent)] underline">
             Next →
           </Link>
         </div>
@@ -109,7 +109,7 @@ export default async function PayPeriodRecapPage({
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-base font-medium text-slate-900">Leave Remaining</h2>
+        <h2 className="text-base font-medium text-[var(--color-text)]">Leave Remaining</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           {(Object.keys(leaveBankRemaining) as (keyof typeof leaveBankRemaining)[]).map(
             (type) => (
@@ -130,13 +130,13 @@ export default async function PayPeriodRecapPage({
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-base font-medium text-slate-900">
+        <h2 className="text-base font-medium text-[var(--color-text)]">
           {formatWeekRange(week1Start)} – {formatWeekRange(week2Start)}
         </h2>
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
+        <div className="overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-card-bg)] shadow-sm">
+          <table className="min-w-full divide-y divide-[var(--color-border)] text-sm">
             <thead>
-              <tr className="text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+              <tr className="text-left text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)]">
                 <th className="px-3 py-2">Date</th>
                 <th className="px-3 py-2 text-right">Raw</th>
                 <th className="px-3 py-2 text-right">Break</th>
@@ -149,19 +149,19 @@ export default async function PayPeriodRecapPage({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[var(--color-border)]">
               {historyRows.map((row, index) => (
                 <tr
                   key={row.date}
                   className={[
-                    index === 7 ? "border-t-2 border-slate-300" : "",
-                    isWeekend(row.date) ? "bg-slate-50" : "",
+                    index === 7 ? "border-t-2 border-[var(--color-border-strong)]" : "",
+                    isWeekend(row.date) ? "bg-[var(--color-weekend-bg)]" : "",
                   ]
                     .filter(Boolean)
                     .join(" ") || undefined}
                 >
                   <td className="px-3 py-1.5">
-                    <Link href={`/entries/${row.date}`} className="text-blue-600 underline">
+                    <Link href={`/entries/${row.date}`} className="text-[var(--color-accent)] underline">
                       {row.date}
                     </Link>
                   </td>
@@ -187,7 +187,7 @@ export default async function PayPeriodRecapPage({
 function WeekSection({ title, week }: { title: string; week: WeekSummary }) {
   return (
     <section className="space-y-2">
-      <h2 className="text-base font-medium text-slate-900">
+      <h2 className="text-base font-medium text-[var(--color-text)]">
         {title} · {formatWeekRange(week.weekStart)}
       </h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -218,15 +218,15 @@ function StatCard({
 }) {
   const toneClass =
     tone === "negative"
-      ? "text-red-600"
+      ? "text-[var(--color-negative)]"
       : tone === "positive"
-        ? "text-emerald-600"
-        : "text-slate-900";
+        ? "text-[var(--color-positive)]"
+        : "text-[var(--color-text)]";
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-sm">
       <p
-        className={`text-xs font-medium uppercase tracking-wide text-slate-500 ${
+        className={`text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)] ${
           capitalizeLabel ? "capitalize" : ""
         }`}
       >

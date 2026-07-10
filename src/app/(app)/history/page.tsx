@@ -13,7 +13,7 @@ function formatHours(hours: number): string {
 }
 
 function toneClass(hours: number): string {
-  return hours < 0 ? "text-red-600" : "text-emerald-600";
+  return hours < 0 ? "text-[var(--color-negative)]" : "text-[var(--color-positive)]";
 }
 
 export default async function HistoryPage() {
@@ -24,8 +24,8 @@ export default async function HistoryPage() {
   if (!recap) {
     return (
       <main className="mx-auto max-w-3xl space-y-4 px-4 py-8">
-        <h1 className="text-xl font-semibold text-slate-900">History</h1>
-        <p className="text-sm text-slate-600">
+        <h1 className="text-xl font-semibold text-[var(--color-text)]">History</h1>
+        <p className="text-sm text-[var(--color-text-muted)]">
           Set a weekly target hours value in Settings to see your history here.
         </p>
       </main>
@@ -41,16 +41,16 @@ export default async function HistoryPage() {
 
   return (
     <main className="mx-auto max-w-3xl space-y-4 px-4 py-8">
-      <h1 className="text-xl font-semibold text-slate-900">History</h1>
-      <p className="text-sm text-slate-600">
+      <h1 className="text-xl font-semibold text-[var(--color-text)]">History</h1>
+      <p className="text-sm text-[var(--color-text-muted)]">
         Every completed pay period, most recent first. Rolling balance is the running
         total as of the end of that period.
       </p>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
+      <div className="overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-card-bg)] shadow-sm">
+        <table className="min-w-full divide-y divide-[var(--color-border)] text-sm">
           <thead>
-            <tr className="text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+            <tr className="text-left text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)]">
               <th className="px-3 py-2">Period</th>
               <th className="px-3 py-2 text-right">Actual</th>
               <th className="px-3 py-2 text-right">Target</th>
@@ -58,7 +58,7 @@ export default async function HistoryPage() {
               <th className="px-3 py-2 text-right">Rolling Balance</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[var(--color-border)]">
             {periods.map((period) => (
               <tr key={period.periodStart}>
                 <td className="px-3 py-1.5">
@@ -76,7 +76,7 @@ export default async function HistoryPage() {
             ))}
             {periods.length === 0 && (
               <tr>
-                <td className="px-3 py-2 text-slate-500" colSpan={5}>
+                <td className="px-3 py-2 text-[var(--color-text-faint)]" colSpan={5}>
                   No tracked weeks yet.
                 </td>
               </tr>

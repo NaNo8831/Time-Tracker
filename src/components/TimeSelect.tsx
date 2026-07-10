@@ -29,7 +29,7 @@ export default function TimeSelect({
       name={name}
       defaultValue={defaultValue ?? ""}
       required={required}
-      className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+      className="rounded-md border border-[var(--color-border-strong)] bg-[var(--color-card-bg)] px-2 py-1 text-sm text-[var(--color-text)]"
     >
       <option value="" disabled>
         --:--
