@@ -2,6 +2,7 @@ import { getDayEntryDetail } from "@/lib/data/entries";
 import { LEAVE_TYPES } from "@/lib/types";
 import TimeSelect from "@/components/TimeSelect";
 import BreakMinutesSelect from "@/components/BreakMinutesSelect";
+import ActionForm from "@/components/ActionForm";
 import {
   addLeaveEntry,
   addSession,
@@ -54,7 +55,7 @@ export default async function DayEntryPage({
 
       <section className="space-y-2">
         <h2 className="text-base font-medium text-[var(--color-text)]">Break</h2>
-        <form action={setBreak} className="flex items-center gap-2">
+        <ActionForm action={setBreak} className="flex items-center gap-2">
           <input type="hidden" name="date" value={date} />
           <BreakMinutesSelect
             name="breakMinutesOverride"
@@ -66,7 +67,7 @@ export default async function DayEntryPage({
           >
             Save
           </button>
-        </form>
+        </ActionForm>
         <p className="text-xs text-[var(--color-text-faint)]">
           Leave as "(use default)" to use the break duration set in Settings for this date.
         </p>
@@ -74,7 +75,7 @@ export default async function DayEntryPage({
 
       <section className="space-y-3">
         <h2 className="text-base font-medium text-[var(--color-text)]">Sessions</h2>
-        <form action={addSession} className="flex flex-wrap items-end gap-3">
+        <ActionForm action={addSession} className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="date" value={date} />
           <div>
             <label className="block text-xs text-[var(--color-text-muted)]">Check in</label>
@@ -90,20 +91,20 @@ export default async function DayEntryPage({
           >
             Add session
           </button>
-        </form>
+        </ActionForm>
         <ul className="divide-y divide-[var(--color-border)] text-sm">
           {entry.sessions.map((session) => (
             <li key={session.id} className="flex items-center justify-between py-1.5">
               <span>
                 {formatTime(session.checkIn)} – {formatTime(session.checkOut)}
               </span>
-              <form action={removeSession}>
+              <ActionForm action={removeSession}>
                 <input type="hidden" name="id" value={session.id} />
                 <input type="hidden" name="date" value={date} />
                 <button type="submit" className="text-xs text-[var(--color-negative)] hover:underline">
                   Remove
                 </button>
-              </form>
+              </ActionForm>
             </li>
           ))}
           {entry.sessions.length === 0 && (
@@ -114,7 +115,7 @@ export default async function DayEntryPage({
 
       <section className="space-y-3">
         <h2 className="text-base font-medium text-[var(--color-text)]">Leave</h2>
-        <form action={addLeaveEntry} className="flex flex-wrap items-end gap-3">
+        <ActionForm action={addLeaveEntry} className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="date" value={date} />
           <div>
             <label className="block text-xs text-[var(--color-text-muted)]">Type</label>
@@ -147,20 +148,20 @@ export default async function DayEntryPage({
           >
             Add leave
           </button>
-        </form>
+        </ActionForm>
         <ul className="divide-y divide-[var(--color-border)] text-sm">
           {entry.leaveEntries.map((leave) => (
             <li key={leave.id} className="flex items-center justify-between py-1.5">
               <span className="capitalize">
                 {leave.leaveType} — {leave.hours} hrs
               </span>
-              <form action={removeLeaveEntry}>
+              <ActionForm action={removeLeaveEntry}>
                 <input type="hidden" name="id" value={leave.id} />
                 <input type="hidden" name="date" value={date} />
                 <button type="submit" className="text-xs text-[var(--color-negative)] hover:underline">
                   Remove
                 </button>
-              </form>
+              </ActionForm>
             </li>
           ))}
           {entry.leaveEntries.length === 0 && (
