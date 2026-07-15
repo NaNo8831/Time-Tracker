@@ -2,35 +2,37 @@
 
 **Project:** Time Tracker
 **Client:** Ly-Ark
-**Last updated:** 2026-07-09
+**Last updated:** 2026-07-14
 
 ---
 
 ## Current Phase
 
-Sprint 004 Complete — Pay Period Recap Redesign + Full-Year Historical Import (code done; SQL handed to user to run)
+Sprint 005 Complete — Weekly Actual Fix + Week Drill-down Modal
 
 ---
 
 ## Current Status
 
-Sprint 004 code is complete, verified (74/74 unit tests, typecheck clean, production build clean), and the historical-import SQL has been independently re-derived and cross-checked to reproduce the architect's verified weekly table exactly, week by week, including the critical already-live `-27.67` boundary. Two SQL scripts are now ready for the user to run against the live Supabase project — nothing has been executed against the database yet.
+Sprint 005 is done and fully verified. The real bug the user found via screenshot — a week's "Actual" hours silently dropping real, already-logged data for days after today (e.g. pre-planned vacation) — is fixed: `buildWeeklyRecap()`'s day loop no longer stops at `today`. Live-verified against the user's own numbers: Week 29 went from a wrong 6.25 hrs to the correct 23.75 hrs, Week 30 from a wrong 0.00 hrs to the correct 40.00 hrs.
 
-- Sprint 003 remains complete and verified live (2026-05-02–2026-06-26 imported, user-confirmed correct, current hours being logged).
-- **Critical**: the new import is additive only. The live database holds real, user-verified data — no destructive operations (no TRUNCATE, no DROP) are in scope. The only mutations to already-existing rows are three settings' `effective_date` and the `rolling_balance_seed`'s value, both mathematically verified (via a standalone Node script) to reproduce every already-proofed Sprint 3 number exactly.
-- SQL run order: `supabase/schema-migration-004-physical-year.sql` first, then `supabase/migration-004-import-2026-01-12-to-2026-05-01.sql`.
+On top of the fix: each week's "Actual" card now has a hover tooltip splitting hours-through-today vs. hours-already-logged-for-later-this-week (broken down by v/s/p), and clicking "Actual" opens a modal with that week's 7-day log (now including a Day-of-week column), replacing the always-visible 14-day table that used to sit at the bottom of the page. History tab and Rolling Balance's "last fully-completed week" logic are both confirmed unaffected (existing test suites for both pass unmodified).
+
+Sprint 004 remains fully complete and live (SQL run, user-verified), the app is deployed to Vercel with GitHub auto-deploy, and the three unplanned post-Sprint-004 rounds (theming, mobile UX fixes, the `ActionForm` mobile-refresh fix) are all still in place.
+
+Not yet committed to git this session (user has not asked for a commit).
 
 ---
 
 ## Active Sprint
 
-`planning/sprints/004-pay-period-recap-and-full-year-import/` — code complete, awaiting user to run the two SQL scripts and spot-check the app.
+None. Sprint 005's folder (`planning/sprints/005-weekly-actual-fix-and-week-drilldown/`) is closed.
 
 ---
 
 ## Active Work
 
-None. Waiting on the user to run the Sprint 004 SQL scripts against the live database and confirm the app matches expectations (see `acceptance.md`'s Historical Import spot-checks).
+None. Everything from Sprint 005 is implemented, tested, and verified live (via an isolated non-auth preview reproducing the user's real scenario). Awaiting the user's next request.
 
 ---
 
@@ -52,38 +54,40 @@ None. Waiting on the user to run the Sprint 004 SQL scripts against the live dat
 
 ## v1 Scope Snapshot
 
-See `planning/DOMAIN.md` and `docs/ARCHITECTURE.md` for full detail. Sprint 004 adds:
+See `planning/DOMAIN.md` and `docs/ARCHITECTURE.md` for full detail. Current shipped scope (Sprint 004 plus the three unplanned rounds after it), with Sprint 005 changes noted:
 
-- **Pay Period Recap** (replaces Weekly Recap as the landing page): Week 1 + Week 2 stats (ISO-week-numbered, odd/even paired), Rolling Balance, Leave Remaining + Weeks Left in Year, a single day-by-day list for both weeks with a visual divider between them, each day clickable to `/entries/{date}`, and Prev/Next period navigation (unlimited range).
+- **Pay Period Recap** (landing page): Week 1 + Week 2 stats (ISO-week-numbered, odd/even paired). **Sprint 005**: Actual/Delta now count every day in the week's range, including days after today with real logged data — not just days through today. Rolling Balance as of the last fully-completed week (unchanged), Leave Remaining (collapsible) + Weeks Left in Year, Prev/Next period navigation (unlimited range). **Sprint 005**: the always-visible 14-day table at the bottom is removed; clicking a week's "Actual" card instead pops open that week's 7-day log in a modal, with a new Day-of-week column and an hover breakdown on "Actual" itself.
 - **Physical Year setting**: user-entered start/end date ranges (list-style, like Paid Holidays), used to compute Weeks Left in Year.
-- **History tab**: same period-list format, re-paired by ISO odd/even week instead of chronological pairing since tracking began, and excludes the current in-progress period.
-- **Daily Entry**: "Recent Entries" list removed.
-- **Nav**: reordered to Daily Entry, Recap, History, Settings.
-- **Historical import**: 2026-01-12 through 2026-05-01 (extends tracked history back from the existing 2026-05-02 start), sourced from four new CSV exports in `references/source-app/`.
-- Out of scope: employer-specific pay-period anchoring (ISO standard only, not configurable), any data before 2026-01-12, reports/analytics beyond what's described here, multi-user.
+- **History tab**: same period-list format, re-paired by ISO odd/even week, excludes the current in-progress period. **Unchanged by Sprint 005** — no per-week drill-down added here, by explicit user decision.
+- **Daily Entry**: "Recent Entries" list removed. Break/Session/Leave forms use a client-side `router.refresh()` after saving so changes always show immediately (mobile included).
+- **Nav**: ordered Daily Entry, Recap, History, Settings.
+- **Appearance**: 5-preset color/dark-mode picker in Settings, per-device (localStorage), applied instantly.
+- **Historical import**: full year to date (2026-01-12 through present), imported and user-verified.
+- **Deployment**: live on Vercel, GitHub auto-deploy on push to `main`.
+- Out of scope: employer-specific pay-period anchoring (ISO standard only, not configurable), any data before 2026-01-12, reports/analytics beyond what's described here, multi-user, History tab drill-down (explicitly deferred/declined this round).
 
 ---
 
 ## Next Actions
 
-1. User runs `supabase/schema-migration-004-physical-year.sql` in the Supabase SQL editor.
-2. User runs `supabase/migration-004-import-2026-01-12-to-2026-05-01.sql` (after step 1).
-3. User spot-checks the app against `planning/sprints/004-pay-period-recap-and-full-year-import/acceptance.md`'s Historical Import section, and confirms Sprint 3's already-live weekly numbers (2026-05-04 onward) are unchanged.
-4. After Sprint 004 is verified live, the earliest remaining gap is 2026-01-01 through 2026-01-09 (data not available — the user's records start 2026-01-10, and 2026-01-10/11 fall outside the trackable Monday-Sunday boundary; see Decisions). No further action needed there unless the user finds additional records later.
+1. User to test Sprint 005 live once deployed (git push not yet requested this session) — spot-check the two real weeks from the original screenshot, try the modal on mobile.
+2. The earliest remaining historical gap is 2026-01-01 through 2026-01-09 (data not available). No action needed unless the user finds additional records later.
 
 ---
 
 ## Blockers
 
-None for the Builder. The user still needs to run the two Sprint 004 SQL scripts against the live Supabase project (Builder has no direct DB access) — those scripts touch a database with real, live, in-use data, so extra care is warranted (see Risks).
+None.
 
 ---
 
 ## Watch Items
 
-- **Critical**: this import is additive-only against a live, real, in-use database. No TRUNCATE, no destructive statements. The three settings `effective_date` changes and the `rolling_balance_seed` value change must reproduce the EXACT already-verified 8-week table from Sprint 3 (see `planning/sprints/003-break-rework-and-migration/acceptance.md`) as a hard regression check before this sprint is considered done.
-- New earliest tracked Monday: `2026-01-12`. New rolling balance seed: `-7.87`. Both mathematically derived and cross-checked against the sheet's own rollover figures and the already-live `-27.67` checkpoint — see `planning/DECISIONS.md`.
-- 2026-01-10 and 2026-01-11 (4.25 real hours on Jan-10) are NOT imported as discrete day records — they fall before the first fully-reconstructable Monday-Sunday week. This does not affect Rolling Balance accuracy (the seed already accounts for it) but means that one specific day's raw session detail is not viewable in the app. Documented, not a bug.
+- New earliest tracked Monday: `2026-01-12`. Rolling balance seed: `-7.87`. See `planning/DECISIONS.md`.
+- 2026-01-10 and 2026-01-11 are NOT imported as discrete day records — documented, not a bug.
 - Three inferred holiday labels (2026-04-02 "Holy Thursday", 2026-04-03 "Good Friday", 2026-04-06 "Easter Monday") — editable in Settings if wrong.
-- ISO week pairing has a known, accepted edge case in 53-ISO-week years (rare) where year-boundary pairing may not alternate cleanly — not solved in v1, Micro-app tier accepts this.
-- Do not implement employer-specific pay-period anchoring — the user explicitly chose the ISO 8601 standard, not a configurable anchor.
+- ISO week pairing has a known, accepted edge case in 53-ISO-week years — not solved in v1.
+- Do not implement employer-specific pay-period anchoring.
+- Sprint 005's fix confirmed NOT to change Rolling Balance's "last fully-completed week" selection logic or History tab's numbers — both existing test suites pass unmodified, plus a live spot-check.
+- Third and fourth deliberate client-side components now exist (`WeekLogModal.tsx`, after `ThemePicker`/`CollapsibleSection`/`ActionForm`) — still no shared modal abstraction; revisit only if a differently-shaped case shows up.
+- **Process note**: this session correctly routed the Sprint 005 request through a full Architect conversation before any code was touched (planning docs refreshed, pack written, code gate honored) — the pattern the user asked for after the earlier unplanned rounds.

@@ -1,9 +1,11 @@
 import Link from "next/link";
 import CollapsibleSection from "@/components/CollapsibleSection";
+import WeekLogModal from "@/components/WeekLogModal";
 import { buildPayPeriodRecap } from "@/lib/calculations/payPeriodRecap";
 import { isoWeekNumber, payPeriodWeek1Start } from "@/lib/calculations/isoWeek";
 import { weeksLeftInYear } from "@/lib/calculations/physicalYear";
 import { addDays } from "@/lib/calculations/dates";
+import { splitWeekActual, type DailyBreakdownRow } from "@/lib/calculations/dailyBreakdown";
 import { getDailyHistoryRows, getRecapInput } from "@/lib/data/recap";
 import { getPhysicalYears } from "@/lib/data/settings";
 import type { WeekSummary } from "@/lib/calculations/recap";
@@ -25,16 +27,12 @@ function formatWeekRange(weekStart: IsoDate): string {
   return `${fmt(start)} - ${fmt(end)}`;
 }
 
-function isWeekend(date: IsoDate): boolean {
-  const day = new Date(`${date}T00:00:00Z`).getUTCDay();
-  return day === 0 || day === 6;
-}
-
-function othersBreakdownTitle(
-  byType: { vacation: number; sick: number; paternity: number },
-  holidayCredit: number
-): string {
-  return `Vacation: ${byType.vacation.toFixed(2)} · Sick: ${byType.sick.toFixed(2)} · Paternity: ${byType.paternity.toFixed(2)} · Holiday: ${holidayCredit.toFixed(2)}`;
+function actualHoverTitle(rows: DailyBreakdownRow[], today: IsoDate): string {
+  const split = splitWeekActual(rows, today);
+  const throughToday = `${split.throughTodayHours.toFixed(2)} hrs through today`;
+  if (split.laterThisWeekHours <= 0) return throughToday;
+  const { vacation, sick, paternity } = split.laterThisWeekByType;
+  return `${throughToday} · ${split.laterThisWeekHours.toFixed(2)} hrs already logged for later this week (v: ${vacation.toFixed(2)} · s: ${sick.toFixed(2)} · p: ${paternity.toFixed(2)})`;
 }
 
 export default async function PayPeriodRecapPage({
@@ -74,6 +72,8 @@ export default async function PayPeriodRecapPage({
   }
 
   const historyRows = await getDailyHistoryRows(week1Start, addDays(week1Start, 13));
+  const week1Rows = historyRows.slice(0, 7);
+  const week2Rows = historyRows.slice(7, 14);
   const weeksLeft = weeksLeftInYear(
     physicalYears.map((y) => ({ startDate: y.startDate, endDate: y.endDate })),
     today
@@ -97,8 +97,18 @@ export default async function PayPeriodRecapPage({
         </div>
       </div>
 
-      <WeekSection title={`Week ${isoWeekNumber(week1.weekStart)}`} week={week1} />
-      <WeekSection title={`Week ${isoWeekNumber(week2.weekStart)}`} week={week2} />
+      <WeekSection
+        title={`Week ${isoWeekNumber(week1.weekStart)}`}
+        week={week1}
+        rows={week1Rows}
+        today={today}
+      />
+      <WeekSection
+        title={`Week ${isoWeekNumber(week2.weekStart)}`}
+        week={week2}
+        rows={week2Rows}
+        today={today}
+      />
 
       <section>
         <StatCard
@@ -128,70 +138,33 @@ export default async function PayPeriodRecapPage({
           />
         </div>
       </CollapsibleSection>
-
-      <section className="space-y-2">
-        <h2 className="text-base font-medium text-[var(--color-text)]">
-          {formatWeekRange(week1Start)} – {formatWeekRange(week2Start)}
-        </h2>
-        <div className="overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-card-bg)] shadow-sm">
-          <table className="min-w-full divide-y divide-[var(--color-border)] text-sm">
-            <thead>
-              <tr className="text-left text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)]">
-                <th className="px-3 py-2">Date</th>
-                <th className="px-3 py-2 text-right">Raw</th>
-                <th className="px-3 py-2 text-right">Break</th>
-                <th
-                  className="px-3 py-2 text-right"
-                  title="Vacation + Sick + Paternity + Holiday Credit — hover a row's value for the breakdown"
-                >
-                  Other
-                </th>
-                <th className="px-3 py-2 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
-              {historyRows.map((row, index) => (
-                <tr
-                  key={row.date}
-                  className={[
-                    index === 7 ? "border-t-2 border-[var(--color-border-strong)]" : "",
-                    isWeekend(row.date) ? "bg-[var(--color-weekend-bg)]" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ") || undefined}
-                >
-                  <td className="px-3 py-1.5">
-                    <Link href={`/entries/${row.date}`} className="text-[var(--color-accent)] underline">
-                      {row.date}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-1.5 text-right">{row.rawHours.toFixed(2)}</td>
-                  <td className="px-3 py-1.5 text-right">{row.breakHours.toFixed(2)}</td>
-                  <td
-                    className="px-3 py-1.5 text-right underline decoration-dotted"
-                    title={othersBreakdownTitle(row.leaveHoursByType, row.holidayCredit)}
-                  >
-                    {row.othersTotal.toFixed(2)}
-                  </td>
-                  <td className="px-3 py-1.5 text-right font-medium">{row.paidHours.toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
     </main>
   );
 }
 
-function WeekSection({ title, week }: { title: string; week: WeekSummary }) {
+function WeekSection({
+  title,
+  week,
+  rows,
+  today,
+}: {
+  title: string;
+  week: WeekSummary;
+  rows: DailyBreakdownRow[];
+  today: IsoDate;
+}) {
+  const weekLabel = `${title} · ${formatWeekRange(week.weekStart)}`;
+
   return (
     <section className="space-y-2">
-      <h2 className="text-base font-medium text-[var(--color-text)]">
-        {title} · {formatWeekRange(week.weekStart)}
-      </h2>
+      <h2 className="text-base font-medium text-[var(--color-text)]">{weekLabel}</h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-        <StatCard label="Actual" value={`${week.actualHours.toFixed(2)} hrs`} />
+        <WeekLogModal
+          value={`${week.actualHours.toFixed(2)} hrs`}
+          hoverTitle={actualHoverTitle(rows, today)}
+          weekLabel={weekLabel}
+          rows={rows}
+        />
         <StatCard label="Target" value={`${week.targetHours.toFixed(2)} hrs`} />
         <StatCard
           label="Delta"

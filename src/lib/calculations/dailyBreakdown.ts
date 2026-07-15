@@ -31,6 +31,38 @@ export interface DailyBreakdownRow {
 
 const LEAVE_TYPES: LeaveType[] = ["vacation", "sick", "paternity"];
 
+export interface WeekActualSplit {
+  throughTodayHours: number;
+  laterThisWeekHours: number;
+  laterThisWeekByType: Record<LeaveType, number>;
+}
+
+/**
+ * Splits a week's daily rows into "through today" and "later this week"
+ * (date > today) totals, for the Pay Period Recap's "Actual" hover tooltip.
+ * Purely presentational — both segments are real, already-logged hours
+ * (planning/DOMAIN.md Rule 6); this does not change what Actual/Delta mean,
+ * it just explains where a week's total comes from.
+ */
+export function splitWeekActual(rows: DailyBreakdownRow[], today: IsoDate): WeekActualSplit {
+  let throughTodayHours = 0;
+  let laterThisWeekHours = 0;
+  const laterThisWeekByType = { vacation: 0, sick: 0, paternity: 0 } as Record<LeaveType, number>;
+
+  for (const row of rows) {
+    if (row.date <= today) {
+      throughTodayHours += row.paidHours;
+    } else {
+      laterThisWeekHours += row.paidHours;
+      for (const type of LEAVE_TYPES) {
+        laterThisWeekByType[type] += row.leaveHoursByType[type];
+      }
+    }
+  }
+
+  return { throughTodayHours, laterThisWeekHours, laterThisWeekByType };
+}
+
 /**
  * A single day's breakdown for display (2-week history view): raw hours,
  * break hours, leave hours split by type, and holiday credit. Reuses the

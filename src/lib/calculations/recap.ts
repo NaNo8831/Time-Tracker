@@ -41,10 +41,11 @@ export interface BuildWeeklyRecapOptions {
    * Extend the computed weeks[] array through (at least) this week's
    * Monday, even if it's after `input.today`. Used only by
    * buildPayPeriodRecap() so a period's Week 2 exists in the result even
-   * when it hasn't happened yet — days after `today` still correctly
-   * contribute 0 actual hours (the existing day-loop below already stops
-   * at `today`). Do NOT pass this from History tab or Leave Bank code —
-   * those must stay bounded to `today` (planning/RISKS.md, 2026-07-09).
+   * when it hasn't happened yet — a day after `today` contributes whatever
+   * is actually logged for it (0 if nothing has been entered yet, but real
+   * hours if e.g. leave was pre-logged in advance; see the day-loop below).
+   * Do NOT pass this from History tab or Leave Bank code — those must stay
+   * bounded to `today` (planning/RISKS.md, 2026-07-09).
    */
   extendThroughWeek?: IsoDate;
 }
@@ -82,7 +83,6 @@ export function buildWeeklyRecap(
     let total = 0;
     for (let offset = 0; offset < 7; offset += 1) {
       const date = addDays(weekStart, offset);
-      if (date > input.today) break;
 
       total += calcWorkHours({
         date,

@@ -91,6 +91,34 @@ describe("buildWeeklyRecap", () => {
     expect(result!.weeks[0].actualHours).toBe(0);
   });
 
+  it("counts real logged data on a day AFTER today, within the current week (regression: pre-logged future leave must not be silently dropped)", () => {
+    // today = 2026-06-02 (Tue). 2026-06-05 (Fri) is later in the same week
+    // and has real leave data pre-logged (e.g. planned vacation). Before the
+    // fix, the day-loop stopped at `today` and this would have been ignored.
+    const leaveHoursByDate = new Map([["2026-06-05", [{ hours: 8 }]]]);
+    const result = buildWeeklyRecap(baseInput({ today: "2026-06-02", leaveHoursByDate }));
+
+    expect(result!.currentWeek.actualHours).toBe(8);
+    expect(result!.currentWeek.delta).toBe(-24); // 8 actual - 32 target
+  });
+
+  it("counts real logged data on a day AFTER today, within a week reached via extendThroughWeek", () => {
+    // today = 2026-06-01; week 2026-06-08 is entirely in the future but
+    // already has real leave data logged (e.g. a whole week of vacation
+    // planned in advance). Before the fix this week always showed 0 actual.
+    const leaveHoursByDate = new Map([["2026-06-10", [{ hours: 40 }]]]);
+    const result = buildWeeklyRecap(
+      baseInput({ today: "2026-06-01", leaveHoursByDate }),
+      { extendThroughWeek: "2026-06-08" }
+    );
+
+    expect(result!.weeks[1].weekStart).toBe("2026-06-08");
+    expect(result!.weeks[1].actualHours).toBe(40);
+    expect(result!.weeks[1].delta).toBe(8); // 40 actual - 32 target
+    // Week 1 (the natural current week) is unaffected.
+    expect(result!.weeks[0].actualHours).toBe(0);
+  });
+
   it("extendThroughWeek has no effect when it's earlier than the natural current week", () => {
     const withoutExtend = buildWeeklyRecap(baseInput({ today: "2026-06-15" }));
     const withExtend = buildWeeklyRecap(

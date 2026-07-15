@@ -2,14 +2,22 @@
 
 Per the Micro-app rigor profile: cover the happy path and the one or two failure modes that would lose the user's data. Do not over-test.
 
-## Sprint 004 Validation Priorities
+## Sprint 005 Validation Priorities
 
-- **Highest priority — the live-data regression check**: after the import, the entire already-proofed Sprint 3 weekly table (2026-05-04–2026-06-26) must reproduce EXACTLY. This is checking against real, currently-relied-upon numbers, not a fresh/empty database — treat any mismatch as a stop-everything issue.
-- **Pay Period week-extension isolation**: confirm the Pay Period Recap's "compute Week 2 even if it's in the future" logic does not affect the History tab's period list or the Leave Bank remaining figures — those must stay bounded to `today`.
-- **ISO week number correctness**: unit test against the verified reference dates in `blueprint.md` (2026-01-12 = week 3, 2026-04-27 = week 18, 2026-05-04 = week 19).
-- **Migration spot-checks**: the four worked-example dates in `acceptance.md` (2026-01-20, 2026-02-13, 2026-03-05, 2026-04-09) should be manually verified in the running app against the source CSVs.
+- **Highest priority — the bug's own regression check**: a day after today with real logged data (sessions or leave) must count toward that week's Actual/Delta. Spot-check against the user's own reported case (2026-07-15/16/17 and 2026-07-20–07-24).
+- **Isolation checks**: History tab numbers unchanged; Rolling Balance unchanged for the same inputs. Both should be provable by running the existing test suites unmodified plus one live spot-check each.
+- **Split-total identity**: `splitWeekActual()`'s two totals must sum to exactly the week's `actualHours` — add this as an explicit test, not just a manual check.
+- **Modal behavior**: opens from either week's Actual card, shows the right 7 rows with a working Day column, dismissible, and works the same whether viewing the current period or one reached via Prev/Next.
+
+## Sprint 004 Validation Priorities (carried forward, already complete)
+
+- The live-data regression check (2026-05-04–2026-06-26 reproduced exactly) — done, user-verified 2026-07-09.
+- Pay Period week-extension isolation — done.
+- ISO week number correctness — done, unit-tested.
+- Migration spot-checks — done, user-verified.
 
 ## Deferred
 
-- Full manual walkthrough of every imported day is not required — the recomputed weekly table plus spot-checks are sufficient per the Micro-app rigor tier.
-- The 53-ISO-week-year edge case and 2026-01-01–01-09 recovery are both explicitly deferred, not validated in this sprint.
+- Full manual walkthrough of every day is not required — targeted spot-checks plus the automated suite are sufficient per the Micro-app rigor tier.
+- The 53-ISO-week-year edge case and 2026-01-01–01-09 recovery remain explicitly deferred.
+- History tab per-week drill-down: explicitly out of scope, not validated.

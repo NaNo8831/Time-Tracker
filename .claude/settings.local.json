@@ -23,7 +23,9 @@
       "Bash(node scripts/apply-architect-pack.js planning/architect-packs/architect-pack-004-pay-period-recap-and-full-year-import.md --dry-run)",
       "Bash(npm run *)",
       "Bash(node \"C:\\\\Users\\\\Mariano\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Mariano-Documents-AI-Apps-and-Information-Projects-Time-Tracker-Time-Tracker\\\\98a1e39f-f2d3-4ec0-b6d9-d779e3556c27\\\\scratchpad\\\\verify004.mjs\")",
-      "Bash(npx vercel *)"
+      "Bash(npx vercel *)",
+      "Bash(node scripts/apply-architect-pack.js planning/architect-packs/architect-pack-005-weekly-actual-fix-and-week-drilldown.md --dry-run)",
+      "Bash(node scripts/apply-architect-pack.js planning/architect-packs/architect-pack-005-weekly-actual-fix-and-week-drilldown.md)"
     ]
   }
 }

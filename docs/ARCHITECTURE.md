@@ -1,6 +1,6 @@
 # Architecture
 
-Time Tracker v1 — architecture defined by the Architect Layer across Packs 001-004.
+Time Tracker v1 — architecture defined by the Architect Layer across Packs 001-005.
 
 ---
 
@@ -25,31 +25,39 @@ Single user, personal use, gated by Supabase email/password login via middleware
 | `standard_workday_hours_settings` | Effective-dated holiday-credit hours. | `hours`, `effective_date` (unique) |
 | `leave_banks` | Effective-dated total hours per leave type. | `leave_type`, `total_hours`, `effective_date` (unique per type) |
 | `rolling_balance_seed` | One-time starting offset for Rolling Balance. No UI. | `balance`, `note` |
-| `physical_year_settings` | **New Sprint 004.** User-entered year date ranges, for Weeks Left in Year. Not effective-dated — looked up by "which range contains this date." | `start_date`, `end_date`, `note` |
+| `physical_year_settings` | User-entered year date ranges, for Weeks Left in Year. Not effective-dated — looked up by "which range contains this date." | `start_date`, `end_date`, `note` |
 
 All effective-dated tables share the "most recent entry with effective_date <= the date being calculated" lookup rule.
 
 **Critical**: the earliest `weekly_target_settings` entry's `effective_date` determines the first week the whole app computes. As of Sprint 004 this is `2026-01-12`.
 
+**Important**: `day_entries`/`sessions`/`leave_entries` are not restricted to past dates — a user can and does log data (especially leave) for future dates. All weekly/daily calculations must treat "future" purely as "no data yet, naturally contributes 0," never as an artificial hard stop (Sprint 005 fixed a bug where the weekly aggregation incorrectly did the latter).
+
 ## Calculation Rules
 
-Rules 1-12 (Raw Hours through Effective-dating) are unchanged since Sprint 003 — see `planning/DOMAIN.md`.
+Rules 1-5, 7-17 unchanged since Sprint 004 — see `planning/DOMAIN.md`. **Rule 6 (Sprint 005)**: Weekly Actual Hours sums Work Hours for all 7 days in a week regardless of the day's relation to "today" — the rule's wording never said otherwise; a day-loop bug that stopped at today was fixed.
 
-**New, Sprint 004** (Rules 13-17 in `planning/DOMAIN.md`): ISO 8601 Week Number; Pay Period (two ISO weeks, odd/even paired); Weeks Left in Year (from the matching Physical Year record); the 53-ISO-week-year pairing edge case is a known, accepted limitation.
+`src/lib/calculations/isoWeek.ts` and `physicalYear.ts` implement Sprint 004's rules as standalone, UI-independent, unit-tested modules, same pattern as the rest of `src/lib/calculations/`. Sprint 005 adds `splitWeekActual()` (in `dailyBreakdown.ts` or similar) as a presentation-only split of the same Rule 5/6 total — not a new business rule.
 
-`src/lib/calculations/isoWeek.ts` and `physicalYear.ts` implement these as standalone, UI-independent, unit-tested modules, same pattern as the rest of `src/lib/calculations/`.
-
-## Screens (v1, updated Sprint 004)
+## Screens (v1, updated Sprint 005)
 
 - **Login** — Supabase Auth sign-in.
-- **Daily Entry** — first in nav order. Sessions, break override, leave hours. No "Recent Entries" list; reachable via day-row links from the Pay Period Recap.
-- **Pay Period Recap** (landing page) — Week 1 + Week 2 stats, Rolling Balance, Leave Remaining, Weeks Left in Year, a clickable 14-day list bound to the period (not a rolling window), Prev/Next period navigation.
-- **History** — every fully-elapsed pay period (excludes the current one), ISO odd/even paired.
-- **Settings** — weekly target, break duration, standard workday hours (under Paid Holidays), leave banks, holidays, and the new Physical Year list.
+- **Daily Entry** — first in nav order. Sessions, break override, leave hours, any date past or future. No "Recent Entries" list. Forms refresh via a client-side `router.refresh()` after saving.
+- **Pay Period Recap** (landing page) — Week 1 + Week 2 stats (Actual now correctly includes all logged days, not just through-today), Rolling Balance, Leave Remaining (collapsible), Weeks Left in Year, Prev/Next period navigation. **Sprint 005**: no more always-visible 14-day table; each week's "Actual" card opens a modal with that week's 7-day log (with a Day-of-week column) and carries a hover tooltip splitting hours through-today vs. later-this-week (by leave type).
+- **History** — every fully-elapsed pay period (excludes the current one), ISO odd/even paired, period-level summary rows only — no drill-down (unchanged by Sprint 005, by explicit decision).
+- **Settings** — weekly target, break duration, standard workday hours (under Paid Holidays), leave banks, holidays, Physical Year list, and Appearance (5 color/dark-mode presets).
+
+## Client-side Interactivity
+
+The app is server-rendered by default (Server Components + Server Actions, no client-side data fetching). Three deliberate, scoped exceptions exist so far: the theme picker (`ThemePicker.tsx`), the collapsible section (`CollapsibleSection.tsx`), the form-refresh wrapper (`ActionForm.tsx`), and now (Sprint 005) the week drill-down modal. Each is a small, single-purpose client component — no shared modal/dialog abstraction exists yet; introduce one only if a fourth, differently-shaped case appears.
 
 ## Migration
 
-One-time SQL scripts, run directly by the user. As of Sprint 004, imports run against a LIVE database with real data — strictly additive, no destructive operations, with mandatory regression verification against every previously-proofed number.
+One-time SQL scripts, run directly by the user. Sprint 004's import ran against a LIVE database with real data — strictly additive, no destructive operations, with mandatory regression verification against every previously-proofed number. Completed and verified 2026-07-09.
+
+## Deployment
+
+Live on Vercel (`https://time-tracker-red-six.vercel.app`), GitHub auto-deploy on push to `main`. No OAuth/magic-link/password-reset flows exist, so no redirect-URL allow-list configuration was needed for the deployed domain.
 
 ## Out of Scope for v1
 

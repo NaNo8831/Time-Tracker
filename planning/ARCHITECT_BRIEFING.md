@@ -1,66 +1,56 @@
 # Architect Briefing
 
-**Last updated:** 2026-07-09 (Sprint 004 code complete, SQL handed to user)
+**Last updated:** 2026-07-14 (Sprint 005 complete)
 
 ---
 
 ## Where things stand
 
-Sprint 004's code is done and fully verified — the landing page is now a true Pay Period Recap (two ISO-week-numbered weeks, clickable day rows, prev/next navigation), a new Physical Year setting drives a "Weeks Left in Year" figure, the History tab now excludes the current period and pairs weeks by the ISO odd/even rule, and Daily Entry/Nav got the requested cleanup. The bigger piece — importing 2026-01-12 through 2026-05-01 of real history — is written and independently double-checked: a standalone script recomputed every week's actual hours and rolling balance from the raw source data and it matches the architect's verified table exactly, week for week, including the critical already-live `-27.67` checkpoint. Nothing has touched the live database yet — two SQL scripts are ready and waiting on the user to run them.
+Sprint 005 is done. The user found a real bug through actual use — they'd pre-logged some vacation days in advance, and the app was silently ignoring that already-saved data when it computed the week's total, making it look like far less had been logged than really had. That's fixed now, and I proved it against the user's own numbers, not just test fixtures: the two weeks from their screenshot went from showing 6.25 hrs and 0.00 hrs to the correct 23.75 hrs and 40.00 hrs. On top of the fix, each week's total now has a helpful hover explaining what's already behind you versus what's already logged ahead, and clicking that total pops open a small window with the day-by-day log for just that week — replacing the big table that used to always sit at the bottom of the page. Everything is tested and verified; nothing has been pushed to the live site yet since the user hasn't asked for that this session.
 
 ---
 
 ## Current status
 
-Sprint 004 (Pay Period Recap Redesign + Full-Year Historical Import) — code complete, unit-tested, typechecked, and build-verified. Not yet committed to git (user has not asked for a commit this session). SQL not yet run against the live database.
+Sprint 005 (Weekly Actual Fix + Week Drill-down Modal) — complete, verified, not yet committed to git. This was the first sprint since 2026-07-09 to go through a full Architect conversation (planning-doc refresh, discovery, clarifying questions, written pack, code gate) before any code was touched — the process the user asked for after three earlier rounds happened directly with the Builder.
 
 ## Since last sprint
 
-- **ISO week numbering**: `isoWeekNumber()` / `payPeriodWeek1Start()` in `src/lib/calculations/isoWeek.ts`, standard-compliant (Monday-Sunday weeks, Week 1 contains the year's first Thursday), verified against known reference dates.
-- **Pay Period Recap**: `buildWeeklyRecap()` gained an opt-in `extendThroughWeek` option (default no-op, so every other caller is unaffected); `buildPayPeriodRecap()` in `src/lib/calculations/payPeriodRecap.ts` uses it to compute Week 1 + Week 2 together, even when Week 2 is still in the future.
-- **Physical Year setting**: new `physical_year_settings` table (list-style, like Paid Holidays), `weeksLeftInYear()` in `src/lib/calculations/physicalYear.ts`.
-- **`src/app/(app)/page.tsx`** fully rewritten as the Pay Period Recap landing page: Week 1 / Week 2 stat cards, Rolling Balance, Leave Remaining + Weeks Left in Year, a single 14-day day-by-day list (visual divider between the two weeks, each row links to `/entries/{date}`), and Prev/Next period navigation via a `?period=` search param.
-- **History tab** (`src/app/(app)/history/page.tsx`): re-paired by the ISO odd/even rule (`groupWeeksIntoPayPeriods`, replacing the old naive chronological `chunkWeeksIntoPeriods`), and now excludes whichever period contains today.
-- **Daily Entry**: "Recent Entries" section and its now-dead `listRecentDayEntries()` data function removed.
-- **Nav**: reordered to Daily Entry, Recap, History, Settings.
-- **Settings**: new Physical Year section (add/remove date ranges, same pattern as Paid Holidays).
-- **Historical import prepared**: `supabase/schema-migration-004-physical-year.sql` (additive, one new table) and `supabase/migration-004-import-2026-01-12-to-2026-05-01.sql` (additive day_entries/sessions/leave_entries/holidays for ~90 real days, plus 3 settings `effective_date` UPDATEs and a `rolling_balance_seed` value UPDATE). Both handed to the user to run — Builder has no DB access.
-- 74/74 unit tests pass (17 new: isoWeek, physicalYear, payPeriodRecap, extended recap, rewritten periods), typecheck clean, production build clean.
+- **The bug fix**: `buildWeeklyRecap()`'s day-loop no longer stops summing at `today`. A day's real logged hours (sessions or leave) now count toward its week's Actual/Delta regardless of whether that day is in the past or future — previously, any data logged for a date after today was silently dropped. The written business rule was always correct; only the code's defensive early-stop was wrong.
+- **`splitWeekActual()`** (`src/lib/calculations/dailyBreakdown.ts`): new pure function powering the "Actual" hover tooltip — splits a week's total into hours-through-today vs. hours-already-logged-for-later-this-week, with the later segment broken down by leave type (v/s/p).
+- **`WeekLogModal`** (`src/components/WeekLogModal.tsx`, new): the "Actual" stat card is now a clickable trigger that opens a modal with that week's 7-day log (Date, Day, Raw, Break, Other, Total — new Day-of-week column). Dismissible via backdrop click, Escape, or a close button.
+- **`src/app/(app)/page.tsx`**: the always-visible 14-day table at the bottom of the Pay Period Recap is gone, replaced by the two per-week modals wired into each `WeekSection`'s "Actual" card.
+- Confirmed via existing (unmodified) test suites that neither the History tab nor Rolling Balance's "last fully-completed week" selection logic were affected by the fix.
+- Live-verified end-to-end via an isolated, non-auth preview reproducing the user's exact real scenario (not just synthetic fixtures) — both weeks now show the correct totals, the modal opens/closes correctly, and the Day column is right.
+- 83/83 unit tests pass (7 new: 2 regression tests for the fix, 3 for `splitWeekActual`, plus 2 more from earlier in the session), typecheck clean, production build clean.
 
 ## Architecture / file map
 
-- `src/lib/calculations/isoWeek.ts` — `isoWeekNumber()`, `payPeriodWeek1Start()`.
-- `src/lib/calculations/payPeriodRecap.ts` — `buildPayPeriodRecap()`.
-- `src/lib/calculations/physicalYear.ts` — `weeksLeftInYear()`.
-- `src/lib/calculations/periods.ts` — `groupWeeksIntoPayPeriods()` (ISO-based, replaces the removed `chunkWeeksIntoPeriods`).
-- `src/lib/calculations/recap.ts` — `buildWeeklyRecap(input, { extendThroughWeek? })`.
-- `src/lib/data/settings.ts` — `getPhysicalYears()` / `addPhysicalYear()` / `removePhysicalYear()`.
-- `src/app/(app)/page.tsx` — Pay Period Recap landing page (was Weekly Recap).
-- `src/app/(app)/history/page.tsx`, `src/app/(app)/entries/[date]/page.tsx`, `src/app/(app)/settings/{page,actions}.tsx`, `src/components/Nav.tsx` — all updated per above.
-- `supabase/schema-migration-004-physical-year.sql`, `supabase/migration-004-import-2026-01-12-to-2026-05-01.sql` — not yet run.
-- `references/source-app/sheet-export-2026-01-10-to-2026-02-06.csv` through `sheet-export-2026-04-04-to-2026-05-01.csv` — the four real source exports, saved verbatim.
+- `src/lib/calculations/recap.ts` — `buildWeeklyRecap()`'s day loop, cutoff removed.
+- `src/lib/calculations/dailyBreakdown.ts` — `splitWeekActual()`, new.
+- `src/components/WeekLogModal.tsx` — new, fourth deliberate client-side component (after `ThemePicker`, `CollapsibleSection`, `ActionForm`). Self-contained: owns its own `isWeekend`/`dayOfWeek`/`othersBreakdownTitle` helpers (moved from `page.tsx`, no longer needed there).
+- `src/app/(app)/page.tsx` — `WeekSection` now takes `rows`/`today` props and renders `WeekLogModal` instead of a plain `StatCard` for "Actual"; the bottom table section is deleted entirely.
+- `tests/calculations/recap.test.ts`, `tests/calculations/dailyBreakdown.test.ts` — new regression coverage.
 
 ## Decisions
 
-See `planning/DECISIONS.md` for the full log: the ISO-standard (not employer-anchored) pay-period decision, the Pay Period Recap layout decision (day-row navigates to the existing Daily Entry page, not a modal), the Physical Year setting shape, the History-tab-excludes-current-period decision, the stray `Mar-9` CSV row recovery, and the derived `2026-01-12` / `-7.87` seed with full mathematical justification.
+See `planning/DECISIONS.md` for the full log, including the two 2026-07-14 entries describing the bug/fix and the modal design, plus a closing entry confirming it shipped exactly as planned with no deviations.
 
 ## Risks / watch-items
 
-- **Not yet executed**: the two Sprint 004 SQL scripts are written and independently verified against the architect's table, but have not been run against the live database. Until the user runs them and confirms, the app will show incomplete history (data starting 2026-05-02, not 2026-01-12).
-- Same live-database care as Sprint 3: run `schema-migration-004-physical-year.sql` first, then the import script. Both are additive/idempotent-safe to re-run from the top if a partial run needs retrying.
-- ISO week pairing has a known, accepted edge case in 53-ISO-week years — not solved in v1, accepted tradeoff.
-- 2026-01-10 and 2026-01-11 are intentionally not imported (fall before the first fully-reconstructable Monday-Sunday week); their contribution is folded into the seed.
+- See `planning/RISKS.md` — the "Actual hours excluding future data" risk is now addressed (Sprint 005). One open item worth tracking: this is now the fourth distinct client-side interactive component with no shared modal/dialog abstraction — still fine at this scale, but worth a shared pattern if a fifth, differently-shaped case shows up.
+- No new risks introduced. History tab and Rolling Balance were both explicitly protected as non-goals and verified unaffected.
 
 ## Open questions for the Architect
 
-None outstanding. The user-configurable pay-period-cycle question from earlier sessions was resolved this sprint (ISO standard, not configurable — explicit user decision).
+None outstanding. The "should History tab get the same drill-down" question was resolved during this sprint's discovery — explicitly no, Prev/Next on the Recap page already covers it.
 
 ## Validation / test status
 
-- Automated: 74/74 unit tests passing, typecheck clean, production build clean.
-- Data verification: a standalone Node script independently recomputed all 16 weeks' actual hours and rolling balance from the raw day-by-day import data and matched the architect's pre-verified table exactly, including the `-27.67` already-live boundary — see this session's work, not yet written into a permanent script (was a throwaway check, deleted after confirming).
-- Manual/live: **not yet done** — SQL hasn't been run against the live database yet. The user should run both scripts, then check the acceptance criteria's Historical Import spot-checks (2026-01-20, 2026-02-13, 2026-03-05, 2026-04-09) and confirm the Sprint 3 numbers (2026-05-04 onward) are unchanged.
+- Automated: 83/83 unit tests passing, typecheck clean, production build clean.
+- Manual/live: verified against an isolated preview reproducing the user's exact reported numbers (not just synthetic fixtures) — both previously-wrong weeks now show the correct totals, hover tooltips match, and the modal (including the new Day column and close/dismiss behavior) all work as specified.
+- Not yet tested against the real production database/mobile device — recommend the user try it live once deployed.
 
 ## Recommended next Architect action
 
-None needed from the Architect. Next step is the user running the two SQL scripts and confirming the app looks right, then (if they want) asking for a git commit — nothing has been committed this session.
+None needed right now. Natural next steps if the user wants them: ask whether to commit and push (nothing has been committed this session), or bring whatever comes up next through an Architect conversation first, per the process the user asked to keep going forward.

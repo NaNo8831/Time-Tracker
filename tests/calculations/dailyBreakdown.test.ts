@@ -1,5 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { dailyBreakdown } from "@/lib/calculations/dailyBreakdown";
+import { dailyBreakdown, splitWeekActual, type DailyBreakdownRow } from "@/lib/calculations/dailyBreakdown";
+import type { IsoDate, LeaveType } from "@/lib/types";
+
+function row(
+  date: IsoDate,
+  paidHours: number,
+  leaveHoursByType: Partial<Record<LeaveType, number>> = {}
+): DailyBreakdownRow {
+  const byType = { vacation: 0, sick: 0, paternity: 0, ...leaveHoursByType } as Record<LeaveType, number>;
+  return {
+    date,
+    rawHours: 0,
+    breakHours: 0,
+    leaveHoursByType: byType,
+    totalLeaveHours: byType.vacation + byType.sick + byType.paternity,
+    holidayCredit: 0,
+    othersTotal: byType.vacation + byType.sick + byType.paternity,
+    paidHours,
+  };
+}
 
 describe("dailyBreakdown", () => {
   it("splits raw hours, break hours, and leave hours by type", () => {
@@ -79,5 +98,66 @@ describe("dailyBreakdown", () => {
     expect(row.holidayCredit).toBe(8);
     expect(row.othersTotal).toBe(8);
     expect(row.paidHours).toBe(8);
+  });
+});
+
+describe("splitWeekActual", () => {
+  it("splits a mixed week into through-today and later-this-week totals, with a leave-type breakdown for the later segment", () => {
+    // Mirrors the reported case: Mon-Tue already worked, Wed-Fri already
+    // logged in advance with different leave types.
+    const rows = [
+      row("2026-07-13", 0),
+      row("2026-07-14", 6.25), // today
+      row("2026-07-15", 8, { vacation: 4 }),
+      row("2026-07-16", 4.5),
+      row("2026-07-17", 5, { sick: 2 }),
+      row("2026-07-18", 0),
+      row("2026-07-19", 0),
+    ];
+
+    const split = splitWeekActual(rows, "2026-07-14");
+
+    expect(split.throughTodayHours).toBeCloseTo(6.25);
+    expect(split.laterThisWeekHours).toBeCloseTo(17.5);
+    expect(split.laterThisWeekByType).toEqual({ vacation: 4, sick: 2, paternity: 0 });
+    // The two totals must always add back up to the week's real actual hours.
+    const weekTotal = rows.reduce((sum, r) => sum + r.paidHours, 0);
+    expect(split.throughTodayHours + split.laterThisWeekHours).toBeCloseTo(weekTotal);
+  });
+
+  it("has no later-this-week hours when the whole week is in the past", () => {
+    const rows = [
+      row("2026-07-06", 8),
+      row("2026-07-07", 8),
+      row("2026-07-08", 8),
+      row("2026-07-09", 8),
+      row("2026-07-10", 8),
+      row("2026-07-11", 0),
+      row("2026-07-12", 0),
+    ];
+
+    const split = splitWeekActual(rows, "2026-07-14");
+
+    expect(split.laterThisWeekHours).toBe(0);
+    expect(split.laterThisWeekByType).toEqual({ vacation: 0, sick: 0, paternity: 0 });
+    expect(split.throughTodayHours).toBe(40);
+  });
+
+  it("puts everything in later-this-week when the whole week is in the future (e.g. a week of pre-planned vacation)", () => {
+    const rows = [
+      row("2026-07-20", 8, { vacation: 8 }),
+      row("2026-07-21", 8, { vacation: 8 }),
+      row("2026-07-22", 8, { vacation: 8 }),
+      row("2026-07-23", 8, { vacation: 8 }),
+      row("2026-07-24", 8, { vacation: 8 }),
+      row("2026-07-25", 0),
+      row("2026-07-26", 0),
+    ];
+
+    const split = splitWeekActual(rows, "2026-07-14");
+
+    expect(split.throughTodayHours).toBe(0);
+    expect(split.laterThisWeekHours).toBe(40);
+    expect(split.laterThisWeekByType.vacation).toBe(40);
   });
 });
