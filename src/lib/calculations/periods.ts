@@ -1,6 +1,6 @@
 import type { IsoDate } from "@/lib/types";
 import { addDays } from "./dates";
-import { payPeriodWeek1Start } from "./isoWeek";
+import { payPeriodStart } from "./payCycle";
 import type { WeekSummary } from "./recap";
 
 export interface PeriodSummary {
@@ -16,9 +16,8 @@ export interface PeriodSummary {
 
 /**
  * Groups already-computed weeks (oldest first, as returned by
- * buildWeeklyRecap) into Pay Periods using the ISO odd/even week rule
- * (planning/DOMAIN.md Business Rule 14), NOT chronological pairing since
- * tracking began. A period at either end of the tracked range may have
+ * buildWeeklyRecap) into the fixed 14-day Saturday–Friday Pay Periods
+ * anchored at 2026-01-10 (planning/DOMAIN.md Business Rule 14). A period at either end of the tracked range may have
  * only one week if the corresponding partner week falls outside what's
  * been computed — that's expected, not a bug.
  */
@@ -26,7 +25,7 @@ export function groupWeeksIntoPayPeriods(weeks: WeekSummary[]): PeriodSummary[] 
   const byPeriodStart = new Map<IsoDate, WeekSummary[]>();
 
   for (const week of weeks) {
-    const periodStart = payPeriodWeek1Start(week.weekStart);
+    const periodStart = payPeriodStart(week.weekStart);
     const bucket = byPeriodStart.get(periodStart) ?? [];
     bucket.push(week);
     byPeriodStart.set(periodStart, bucket);

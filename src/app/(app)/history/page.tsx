@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { buildWeeklyRecap } from "@/lib/calculations/recap";
 import { groupWeeksIntoPayPeriods } from "@/lib/calculations/periods";
-import { payPeriodWeek1Start } from "@/lib/calculations/isoWeek";
+import { payPeriodStart } from "@/lib/calculations/payCycle";
 import { getRecapInput } from "@/lib/data/recap";
 
 function todayIso(): string {
@@ -35,7 +35,7 @@ export default async function HistoryPage() {
 
   // Oldest-first internally; show most recent period first. The current
   // (in-progress) pay period is shown on the Recap page, not here.
-  const currentPeriodStart = payPeriodWeek1Start(today);
+  const currentPeriodStart = payPeriodStart(today);
   const periods = groupWeeksIntoPayPeriods(recap.weeks)
     .filter((period) => period.periodStart !== currentPeriodStart)
     .reverse();

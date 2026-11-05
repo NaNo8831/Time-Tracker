@@ -2,6 +2,12 @@
 
 Per the Micro-app rigor profile: cover the happy path and the one or two failure modes that would lose the user's data. Do not over-test.
 
+## Sprint 007 Validation Priorities (done 2026-11-05; live checks by the user after deploy + SQL)
+
+- **Highest priority — reconciliation against the sheet**: every Sat–Fri week Jan 10 → Jun 26 must match the sheet's printed weekly Actual (±0.02) and rolling balance (±0.05) before the SQL is released.
+- Period boundaries equal the user's stubs: Sep 19–Oct 2, Oct 3–Oct 16, Oct 17–Oct 30; current period Oct 31–Nov 13.
+- No remaining references to ISO weeks or Monday-based weeks in `src/` or `tests/`.
+
 ## Sprint 005 Validation Priorities
 
 - **Highest priority — the bug's own regression check**: a day after today with real logged data (sessions or leave) must count toward that week's Actual/Delta. Spot-check against the user's own reported case (2026-07-15/16/17 and 2026-07-20–07-24).

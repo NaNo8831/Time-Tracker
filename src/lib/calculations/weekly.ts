@@ -12,14 +12,15 @@ export function weeklyActualHours(daysInWeek: DayWorkHours[]): number {
 
 /**
  * Rule 7: Weekly Actual Hours minus the Weekly Target in effect on that
- * week's Monday. A target change taking effect mid-week does not apply
- * until the following Monday's week (planning/DECISIONS.md, 2026-07-09).
+ * week's first day (a Saturday). A target change taking effect mid-week does
+ * not apply until the following week (planning/DECISIONS.md, 2026-07-09,
+ * week boundary updated 2026-11-05).
  */
 export function weeklyDelta(
   weeklyActual: number,
-  weeklyTargetHoursAtMonday: number
+  weeklyTargetHoursAtWeekStart: number
 ): number {
-  return weeklyActual - weeklyTargetHoursAtMonday;
+  return weeklyActual - weeklyTargetHoursAtWeekStart;
 }
 
 /**
@@ -32,17 +33,4 @@ export function rollingBalance(weeklyDeltasInOrder: number[], seed = 0): number[
     running += delta;
     return running;
   });
-}
-
-/**
- * Returns the ISO date of the Monday for the week containing `date`.
- * Used to look up the Weekly Target value that governs a whole week
- * (planning/DOMAIN.md Business Rule 4).
- */
-export function mondayOf(date: IsoDate): IsoDate {
-  const d = new Date(`${date}T00:00:00Z`);
-  const day = d.getUTCDay(); // 0 = Sunday, 1 = Monday, ...
-  const daysSinceMonday = day === 0 ? 6 : day - 1;
-  d.setUTCDate(d.getUTCDate() - daysSinceMonday);
-  return d.toISOString().slice(0, 10);
 }

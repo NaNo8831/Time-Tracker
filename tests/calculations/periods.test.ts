@@ -7,51 +7,70 @@ function week(weekStart: string, actualHours: number, targetHours: number, rolli
 }
 
 describe("groupWeeksIntoPayPeriods", () => {
-  it("pairs weeks by ISO odd/even parity, oldest first", () => {
-    // 2026-06-01 = ISO week 23 (odd, Week 1); 2026-06-08 = week 24 (even, Week 2).
-    // 2026-06-15 = week 25 (odd, Week 1 of the next period); 2026-06-22 = week 26 (even).
+  it("pairs Sat–Fri weeks into fixed 14-day periods, oldest first", () => {
+    // Pay periods start every 14 days from Sat 2026-01-10: 2026-05-30 and
+    // 2026-06-13 are period starts, so 05-30 + 06-06 form one period and
+    // 06-13 + 06-20 the next.
     const weeks = [
-      week("2026-06-01", 32, 32, 0),
-      week("2026-06-08", 30, 32, -2),
-      week("2026-06-15", 32, 32, -2),
-      week("2026-06-22", 34, 32, 0),
+      week("2026-05-30", 32, 32, 0),
+      week("2026-06-06", 30, 32, -2),
+      week("2026-06-13", 32, 32, -2),
+      week("2026-06-20", 34, 32, 0),
     ];
 
     const periods = groupWeeksIntoPayPeriods(weeks);
 
     expect(periods).toHaveLength(2);
-    expect(periods[0].periodStart).toBe("2026-06-01");
-    expect(periods[0].periodEnd).toBe("2026-06-14");
+    expect(periods[0].periodStart).toBe("2026-05-30");
+    expect(periods[0].periodEnd).toBe("2026-06-12");
     expect(periods[0].actualHours).toBe(62);
     expect(periods[0].targetHours).toBe(64);
     expect(periods[0].delta).toBe(-2);
     expect(periods[0].rollingBalance).toBe(-2); // week 2's rolling balance, not summed
 
-    expect(periods[1].periodStart).toBe("2026-06-15");
+    expect(periods[1].periodStart).toBe("2026-06-13");
     expect(periods[1].actualHours).toBe(66);
     expect(periods[1].rollingBalance).toBe(0);
   });
 
-  it("gives a lone even (Week 2) week its own period when its Week 1 isn't in the input", () => {
-    // 2026-06-08 (week 24, even) is Week 2 of the period starting 2026-06-01,
-    // but that Week 1 isn't present here (e.g. it's before tracked history).
-    const weeks = [week("2026-06-08", 30, 32, -2)];
+  it("matches the user's real stub periods", () => {
+    const weeks = [
+      week("2026-09-19", 32, 32, 0),
+      week("2026-09-26", 32, 32, 0),
+      week("2026-10-03", 32, 32, 0),
+      week("2026-10-10", 32, 32, 0),
+      week("2026-10-17", 32, 32, 0),
+      week("2026-10-24", 32, 32, 0),
+    ];
 
     const periods = groupWeeksIntoPayPeriods(weeks);
 
-    expect(periods).toHaveLength(1);
-    expect(periods[0].periodStart).toBe("2026-06-01");
-    expect(periods[0].weeks).toHaveLength(1);
-    expect(periods[0].weeks[0].weekStart).toBe("2026-06-08");
+    expect(periods.map((p) => [p.periodStart, p.periodEnd])).toEqual([
+      ["2026-09-19", "2026-10-02"],
+      ["2026-10-03", "2026-10-16"],
+      ["2026-10-17", "2026-10-30"],
+    ]);
   });
 
-  it("gives a lone odd (Week 1) week its own period when Week 2 hasn't happened yet", () => {
-    const weeks = [week("2026-06-15", 32, 32, -2)];
+  it("gives a lone Week 2 its own period when its Week 1 isn't in the input", () => {
+    // 2026-06-06 is the second week of the period starting 2026-05-30.
+    const weeks = [week("2026-06-06", 30, 32, -2)];
 
     const periods = groupWeeksIntoPayPeriods(weeks);
 
     expect(periods).toHaveLength(1);
-    expect(periods[0].periodStart).toBe("2026-06-15");
+    expect(periods[0].periodStart).toBe("2026-05-30");
+    expect(periods[0].weeks).toHaveLength(1);
+    expect(periods[0].weeks[0].weekStart).toBe("2026-06-06");
+  });
+
+  it("gives a lone Week 1 its own period when Week 2 hasn't happened yet", () => {
+    const weeks = [week("2026-06-13", 32, 32, -2)];
+
+    const periods = groupWeeksIntoPayPeriods(weeks);
+
+    expect(periods).toHaveLength(1);
+    expect(periods[0].periodStart).toBe("2026-06-13");
     expect(periods[0].weeks).toHaveLength(1);
   });
 

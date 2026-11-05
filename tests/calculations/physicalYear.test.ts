@@ -13,16 +13,16 @@ describe("weeksLeftInYear", () => {
   });
 
   it("counts the current week as 1 remaining when today is in the final week", () => {
-    // Year ends 2026-07-12 (Sunday of the week starting today, 2026-07-06 Monday).
+    // Year ends Fri 2026-07-10, the last day of today's Sat–Fri week (starting Sat 2026-07-04).
     const result = weeksLeftInYear(
-      [{ startDate: "2026-01-01", endDate: "2026-07-12" }],
+      [{ startDate: "2026-01-01", endDate: "2026-07-10" }],
       "2026-07-09"
     );
     expect(result).toBe(1);
   });
 
   it("counts multiple full weeks remaining", () => {
-    // today's week Monday = 2026-07-06; end date's week Monday = 2026-07-20
+    // today's week starts Sat 2026-07-04; the end date's week starts Sat 2026-07-18
     // (two weeks later) -> 3 weeks remaining inclusive.
     const result = weeksLeftInYear(
       [{ startDate: "2026-01-01", endDate: "2026-07-24" }],

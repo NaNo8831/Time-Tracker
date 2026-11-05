@@ -44,3 +44,37 @@ Record durable decisions future sprints must respect.
 | 2026-11-05 | Sprint 006 scope set: bug fix, Daily Entry date picker auto-navigates (no Go button), History pay-period date ranges link to that period's Recap, Recap headings read "Week 1"/"Week 2" instead of ISO week numbers. Pay periods stay ISO-paired for now. | User pain points 1, 3, 4. | Fifth deliberate client-side component (`DateJump`). |
 | 2026-11-05 | **Sprint 007 (parked)**: align pay periods with the user's pay stubs, to be scoped after the user provides the last two stubs. This will reverse part of the 2026-07-09 ISO-week decision (user then said pay periods were "a tracking metric"; now wants them to match their stubs). | User pain point 2. A fixed start date repeating every 14 days would also remove the 53-ISO-week year-boundary limitation (Rule 17), which is imminent (2026-12-28 / 2027-01-04). | No work until the stubs arrive. |
 | 2026-11-05 | Sprint 006 shipped as planned. Implementation detail: the pure `buildDayEntryDetail` lives in its own module (`src/lib/data/entryDetail.ts`) so tests don't import the server-only Supabase client; `entries.ts` re-exports the types. Audit found `getDayEntryDetail()` was the only place gating date-keyed data behind a `day_entries` row (Recap loaders read leave/holidays independently). `DateJump` navigates only for complete dates in 2000–2099. | Keeps the regression test runnable under Vitest; guards against mid-typing navigation. | Fifth client-side component (`DateJump`). 86/86 tests, typecheck and build clean. |
+| 2026-11-05 | **Sprint 007 — pay cycle alignment (supersedes the 2026-07-09 "ISO standard pay periods" decision and the Sprint 003 "weeks are Monday–Sunday" choice).** The user's stub periods (Sep 19–Oct 2, Oct 3–Oct 16, Oct 17–Oct 30, 2026) are Saturday–Friday, 14-day blocks anchored exactly to Sat 2026-01-10 (252 days = 18 cycles before Sep 19) — the first day of the original Google Sheet, whose weekly blocks were also Sat–Fri. Weeks become Sat–Fri everywhere; a pay period is two such weeks in a fixed 14-day cycle anchored at 2026-01-10 (code constant `PAY_CYCLE_ANCHOR`, not a setting). | The ISO decision was made when the user called pay periods "a tracking metric"; they now want them to match their pay stubs, and the real cycle also matches their sheet, so the earlier Monday–Sunday re-derivation (Sprint 003) was a workaround. | `payCycle.ts` replaces `isoWeek.ts`/`mondayOf`; Rolling Balance re-seeds to the sheet's own carried-in **-12.12 at 2026-01-10**; Jan 10 (4.25 hrs) is imported; three settings `effective_date` move 2026-01-12 → 2026-01-10; the 53-ISO-week limitation (old Rule 17) is retired. A reconciliation script against the sheet's printed weekly balances gates the SQL. |
+| 2026-11-05 | Pay stubs matter for **dates only**; no stub amounts / paid-hours comparison. Weeks Left in Year will count Sat-start weeks. | User answer during Sprint 007 discovery; consistency with the new week definition. | Stub reconciliation is explicitly out of scope; revisit only if asked. |
+
+## Sprint 007 reconciliation (2026-11-05)
+
+Gate run before releasing the SQL: all six saved sheet exports (Jan 10 – Jun 26) recomputed with the app's rules, Sat–Fri weeks, seed -12.12, target 32/wk. **24 of 24 weeks match** the sheet's own printed weekly Actual and rolling balance (worst difference: 0.003 hrs on a week's Actual, 0.007 on the running balance; the sheet rounds to 2 decimals). The first run flagged one week by exactly 12.00 hrs — a bug in the throwaway script (the sheet writes Jun-11's second check-in as "2:00:00 PM"; the script misread it as 2:00 AM). The live import SQL had stored that day correctly (14:00–16:30), so no data was wrong. Period boundaries confirmed: Sep 19–Oct 2, Oct 3–Oct 16, Oct 17–Oct 30; current period (2026-11-05) Oct 31–Nov 13.
+
+| Week (Sat–Fri) start | App Actual | Sheet Actual | App rolling | Sheet rolling |
+|---|---:|---:|---:|---:|
+| 2026-01-10 | 34.75 | 34.75 | -9.37 | -9.37 |
+| 2026-01-17 | 29.40 | 29.4 | -11.97 | -11.97 |
+| 2026-01-24 | 27.00 | 27 | -16.97 | -16.97 |
+| 2026-01-31 | 27.25 | 27.25 | -21.72 | -21.72 |
+| 2026-02-07 | 34.50 | 34.5 | -19.22 | -19.22 |
+| 2026-02-14 | 33.00 | 33 | -18.22 | -18.22 |
+| 2026-02-21 | 42.50 | 42.5 | -7.72 | -7.72 |
+| 2026-02-28 | 35.33 | 35.33 | -4.39 | -4.38 |
+| 2026-03-07 | 29.50 | 29.5 | -6.89 | -6.88 |
+| 2026-03-14 | 31.75 | 31.75 | -7.14 | -7.13 |
+| 2026-03-21 | 23.75 | 23.75 | -15.39 | -15.38 |
+| 2026-03-28 | 26.30 | 26.3 | -21.09 | -21.08 |
+| 2026-04-04 | 35.07 | 35.07 | -18.02 | -18.02 |
+| 2026-04-11 | 27.30 | 27.3 | -22.72 | -22.72 |
+| 2026-04-18 | 29.40 | 29.4 | -25.32 | -25.32 |
+| 2026-04-25 | 29.65 | 29.65 | -27.67 | -27.67 |
+| 2026-05-02 | 32.75 | 32.75 | -26.92 | -26.92 |
+| 2026-05-09 | 32.50 | 32.5 | -26.42 | -26.42 |
+| 2026-05-16 | 33.75 | 33.75 | -24.67 | -24.67 |
+| 2026-05-23 | 41.90 | 41.9 | -14.77 | -14.77 |
+| 2026-05-30 | 32.75 | 32.75 | -14.02 | -14.02 |
+| 2026-06-06 | 38.75 | 38.75 | -7.27 | -7.27 |
+| 2026-06-13 | 25.75 | 25.75 | -13.52 | -13.52 |
+| 2026-06-20 | 26.00 | 26 | -19.52 | -19.52 |
+

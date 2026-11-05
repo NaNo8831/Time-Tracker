@@ -1,25 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { valueInEffect } from "@/lib/calculations/effectiveDated";
+import { payWeekStart } from "@/lib/calculations/payCycle";
 import {
-  mondayOf,
   rollingBalance,
   weeklyActualHours,
   weeklyDelta,
 } from "@/lib/calculations/weekly";
-
-describe("mondayOf", () => {
-  it("returns the same date when given a Monday", () => {
-    expect(mondayOf("2026-07-06")).toBe("2026-07-06");
-  });
-
-  it("returns the prior Monday for a mid-week date", () => {
-    expect(mondayOf("2026-07-09")).toBe("2026-07-06"); // Thursday
-  });
-
-  it("handles Sunday correctly (rolls back to the same week's Monday)", () => {
-    expect(mondayOf("2026-07-12")).toBe("2026-07-06");
-  });
-});
 
 describe("weeklyActualHours / weeklyDelta / rollingBalance", () => {
   it("sums the week and computes delta against target", () => {
@@ -52,19 +38,19 @@ describe("weeklyActualHours / weeklyDelta / rollingBalance", () => {
 });
 
 describe("effective-dating regression: weekly target change mid-history", () => {
-  it("a weekly target entry effective next Monday does not change a past week's delta", () => {
+  it("a weekly target entry effective next week does not change a past week's delta", () => {
     const targetEntries = [{ value: 32, effectiveDate: "2026-01-01" }];
-    const pastWeekMonday = mondayOf("2026-03-04"); // some past week
-    const pastTargetBefore = valueInEffect(targetEntries, pastWeekMonday);
+    const pastWeekStart = payWeekStart("2026-03-04"); // some past week
+    const pastTargetBefore = valueInEffect(targetEntries, pastWeekStart);
     const pastDeltaBefore = weeklyDelta(30, pastTargetBefore!);
 
-    // Add a new target entry effective "next Monday" (a future date relative
+    // Add a new target entry effective next week (a future date relative
     // to the past week already computed above).
     const updatedEntries = [
       ...targetEntries,
-      { value: 40, effectiveDate: "2026-07-13" },
+      { value: 40, effectiveDate: "2026-07-11" },
     ];
-    const pastTargetAfter = valueInEffect(updatedEntries, pastWeekMonday);
+    const pastTargetAfter = valueInEffect(updatedEntries, pastWeekStart);
     const pastDeltaAfter = weeklyDelta(30, pastTargetAfter!);
 
     expect(pastTargetAfter).toBe(pastTargetBefore);
