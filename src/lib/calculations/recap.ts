@@ -3,7 +3,8 @@ import { addDays } from "./dates";
 import { valueInEffect, type EffectiveDatedEntry } from "./effectiveDated";
 import { leaveBankRemaining } from "./leaveBanks";
 import { workHours as calcWorkHours, type Session } from "./workHours";
-import { mondayOf, rollingBalance, weeklyDelta } from "./weekly";
+import { payWeekStart } from "./payCycle";
+import { rollingBalance, weeklyDelta } from "./weekly";
 
 export interface RecapInput {
   today: IsoDate;
@@ -39,7 +40,7 @@ const LEAVE_TYPES: LeaveType[] = ["vacation", "sick", "paternity"];
 export interface BuildWeeklyRecapOptions {
   /**
    * Extend the computed weeks[] array through (at least) this week's
-   * Monday, even if it's after `input.today`. Used only by
+   * start (Saturday), even if it's after `input.today`. Used only by
    * buildPayPeriodRecap() so a period's Week 2 exists in the result even
    * when it hasn't happened yet — a day after `today` contributes whatever
    * is actually logged for it (0 if nothing has been entered yet, but real
@@ -67,15 +68,15 @@ export function buildWeeklyRecap(
   const earliestTargetDate = [...input.weeklyTargetSettings]
     .map((entry) => entry.effectiveDate)
     .sort()[0];
-  const startMonday = mondayOf(earliestTargetDate);
-  const currentWeekMonday = mondayOf(input.today);
-  const endWeekMonday =
-    options.extendThroughWeek && options.extendThroughWeek > currentWeekMonday
+  const startWeek = payWeekStart(earliestTargetDate);
+  const currentWeekStart = payWeekStart(input.today);
+  const endWeekStart =
+    options.extendThroughWeek && options.extendThroughWeek > currentWeekStart
       ? options.extendThroughWeek
-      : currentWeekMonday;
+      : currentWeekStart;
 
   const weekStarts: IsoDate[] = [];
-  for (let week = startMonday; week <= endWeekMonday; week = addDays(week, 7)) {
+  for (let week = startWeek; week <= endWeekStart; week = addDays(week, 7)) {
     weekStarts.push(week);
   }
 

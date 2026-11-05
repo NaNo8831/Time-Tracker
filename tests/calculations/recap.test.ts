@@ -4,9 +4,9 @@ import { buildWeeklyRecap, type RecapInput } from "@/lib/calculations/recap";
 function baseInput(overrides: Partial<RecapInput> = {}): RecapInput {
   return {
     today: "2026-07-09", // Thursday
-    weeklyTargetSettings: [{ value: 32, effectiveDate: "2026-06-01" }],
-    breakDurationSettings: [{ value: 30, effectiveDate: "2026-06-01" }],
-    standardWorkdayHoursSettings: [{ value: 8, effectiveDate: "2026-06-01" }],
+    weeklyTargetSettings: [{ value: 32, effectiveDate: "2026-05-30" }],
+    breakDurationSettings: [{ value: 30, effectiveDate: "2026-05-30" }],
+    standardWorkdayHoursSettings: [{ value: 8, effectiveDate: "2026-05-30" }],
     holidays: new Set<string>(),
     sessionsByDate: new Map(),
     breakMinutesOverrideByDate: new Map(),
@@ -19,6 +19,14 @@ function baseInput(overrides: Partial<RecapInput> = {}): RecapInput {
 }
 
 describe("buildWeeklyRecap", () => {
+  it("builds weeks that start on Saturday and run Saturday–Friday", () => {
+    const result = buildWeeklyRecap(baseInput({ today: "2026-06-13" }));
+    expect(result!.weeks.map((w) => w.weekStart)).toEqual(["2026-05-30", "2026-06-06", "2026-06-13"]);
+    for (const w of result!.weeks) {
+      expect(new Date(`${w.weekStart}T00:00:00Z`).getUTCDay()).toBe(6);
+    }
+  });
+
   it("returns null when no weekly target has been set", () => {
     expect(buildWeeklyRecap(baseInput({ weeklyTargetSettings: [] }))).toBeNull();
   });
@@ -38,7 +46,7 @@ describe("buildWeeklyRecap", () => {
   });
 
   it("does not apply the default break to days with no sessions (regression for the phantom-break bug)", () => {
-    // Three fully unworked weeks starting 2026-06-01 (a Monday), target 32/week,
+    // Three fully unworked Sat–Fri weeks starting 2026-05-30 (a Saturday), target 32/week,
     // with a break duration default in effect. If the default break wrongly
     // applied to every empty day, each week's actual would be -3.5 (7 * -0.5)
     // instead of 0, corrupting the rolling balance.
@@ -64,8 +72,8 @@ describe("buildWeeklyRecap", () => {
       baseInput({
         today: "2026-06-15",
         weeklyTargetSettings: [
-          { value: 32, effectiveDate: "2026-06-01" },
-          { value: 40, effectiveDate: "2026-07-13" }, // future relative to the range above
+          { value: 32, effectiveDate: "2026-05-30" },
+          { value: 40, effectiveDate: "2026-07-11" }, // future relative to the range above
         ],
       })
     );
@@ -75,16 +83,16 @@ describe("buildWeeklyRecap", () => {
   });
 
   it("extendThroughWeek includes a future week with zero actual hours, without affecting past weeks", () => {
-    // today is mid-week-1 (2026-06-01, a Monday); extend through week 2
-    // (2026-06-08) so a Pay Period Recap can show it even though it hasn't
-    // happened yet.
+    // today is in week 1 (the Sat–Fri week starting 2026-05-30); extend through
+    // week 2 (starting 2026-06-06) so a Pay Period Recap can show it even though
+    // it hasn't happened yet.
     const result = buildWeeklyRecap(
       baseInput({ today: "2026-06-01" }),
-      { extendThroughWeek: "2026-06-08" }
+      { extendThroughWeek: "2026-06-06" }
     );
 
     expect(result!.weeks).toHaveLength(2);
-    expect(result!.weeks[1].weekStart).toBe("2026-06-08");
+    expect(result!.weeks[1].weekStart).toBe("2026-06-06");
     expect(result!.weeks[1].actualHours).toBe(0); // future week, nothing logged yet
     expect(result!.weeks[1].delta).toBe(-32);
     // Week 1 is unaffected by the extension.
@@ -103,16 +111,16 @@ describe("buildWeeklyRecap", () => {
   });
 
   it("counts real logged data on a day AFTER today, within a week reached via extendThroughWeek", () => {
-    // today = 2026-06-01; week 2026-06-08 is entirely in the future but
+    // today = 2026-06-01; the week starting 2026-06-06 is entirely in the future but
     // already has real leave data logged (e.g. a whole week of vacation
     // planned in advance). Before the fix this week always showed 0 actual.
     const leaveHoursByDate = new Map([["2026-06-10", [{ hours: 40 }]]]);
     const result = buildWeeklyRecap(
       baseInput({ today: "2026-06-01", leaveHoursByDate }),
-      { extendThroughWeek: "2026-06-08" }
+      { extendThroughWeek: "2026-06-06" }
     );
 
-    expect(result!.weeks[1].weekStart).toBe("2026-06-08");
+    expect(result!.weeks[1].weekStart).toBe("2026-06-06");
     expect(result!.weeks[1].actualHours).toBe(40);
     expect(result!.weeks[1].delta).toBe(8); // 40 actual - 32 target
     // Week 1 (the natural current week) is unaffected.
@@ -123,7 +131,7 @@ describe("buildWeeklyRecap", () => {
     const withoutExtend = buildWeeklyRecap(baseInput({ today: "2026-06-15" }));
     const withExtend = buildWeeklyRecap(
       baseInput({ today: "2026-06-15" }),
-      { extendThroughWeek: "2026-06-01" }
+      { extendThroughWeek: "2026-05-30" }
     );
 
     expect(withExtend!.weeks).toEqual(withoutExtend!.weeks);

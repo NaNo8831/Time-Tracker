@@ -1,6 +1,6 @@
 # Architecture
 
-Time Tracker v1 — architecture defined by the Architect Layer across Packs 001-006.
+Time Tracker v1 — architecture defined by the Architect Layer across Packs 001-007.
 
 ---
 
@@ -62,3 +62,7 @@ Live on Vercel (`https://time-tracker-red-six.vercel.app`), GitHub auto-deploy o
 ## Out of Scope for v1
 
 See `planning/DOMAIN.md`.
+
+## Pay Cycle (Sprint 007)
+
+Weeks run **Saturday–Friday**; a pay period is a fixed 14-day block (Week 1 + Week 2) anchored at `PAY_CYCLE_ANCHOR = 2026-01-10` in `src/lib/calculations/payCycle.ts` (`payWeekStart`, `payPeriodStart`), matching the user's pay stubs. `isoWeek.ts` and `mondayOf` were removed; `recap.ts`, `periods.ts`, `physicalYear.ts`, the Recap and History pages all use the pay cycle. The Recap's `?period=` value snaps to its period start. The earliest `weekly_target_settings.effective_date` is 2026-01-10 and the rolling-balance seed is -12.12 (the sheet's carried-in balance), applied by `supabase/migration-007-sat-fri-weeks.sql`. Any text elsewhere in this file that mentions Monday–Sunday weeks, ISO week pairing, or the 53-week limitation is historical and superseded by this section.

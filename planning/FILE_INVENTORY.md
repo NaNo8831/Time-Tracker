@@ -54,3 +54,15 @@ Use this file to track important project files, references, samples, and their s
 | `planning/sprints/006-leave-bug-and-navigation/blueprint.md` | Bug fix + navigation changes design. | Created by Architect Pack 006 |
 | `planning/sprints/006-leave-bug-and-navigation/acceptance.md` | Sprint 006 acceptance criteria. | Created by Architect Pack 006 |
 | `planning/sprints/006-leave-bug-and-navigation/handoff-prompt.md` | Sprint 006 Builder handoff prompt. | Created by Architect Pack 006 |
+
+## Sprint 007 Deliverables
+
+| File | Purpose | Status |
+|---|---|---|
+| `planning/sprints/007-pay-cycle-alignment/requirements.md` | Sprint 007 requirements. | Created by Architect Pack 007 |
+| `planning/sprints/007-pay-cycle-alignment/blueprint.md` | Sat–Fri weeks / fixed 14-day cycle design, reconciliation gate, SQL. | Created by Architect Pack 007 |
+| `planning/sprints/007-pay-cycle-alignment/acceptance.md` | Sprint 007 acceptance criteria. | Created by Architect Pack 007 |
+| `planning/sprints/007-pay-cycle-alignment/handoff-prompt.md` | Sprint 007 Builder handoff prompt. | Created by Architect Pack 007 |
+| `src/lib/calculations/payCycle.ts` | Pay cycle anchor, `payWeekStart`, `payPeriodStart` (replaces `isoWeek.ts`). | Built Sprint 007 |
+| `tests/calculations/payCycle.test.ts`, `tests/calculations/payCycleRealData.test.ts` | Stub-date tests; real-sheet regression (-9.37/-11.97/-16.97). | Built Sprint 007 |
+| `supabase/migration-007-sat-fri-weeks.sql` | Additive, idempotent: Jan 10 import, settings dates → 2026-01-10, seed → -12.12. | Written; user runs after deploy |

@@ -1,54 +1,54 @@
 # Architect Briefing
 
-**Last updated:** 2026-11-05 (Sprint 006 complete)
+**Last updated:** 2026-11-05 (Sprint 007 built; awaiting deploy + SQL)
 
 ---
 
 ## Where things stand
 
-Sprint 006 is done and checked. The leave-entry bug is fixed: the Daily Entry page was skipping the leave query on any day that had no session or break saved, so a day with only vacation looked empty and nothing could be removed — which is why the same entry kept getting added until 72 hours piled up on 11-5. Leave now shows and removes on any date. The date picker opens a date as soon as you choose it (no Go button), History's pay-period date ranges now open that period's Recap, and the Recap headings say "Week 1" and "Week 2". Everything passes its tests and builds, but none of it is committed or live yet. Next: the user decides on commit/push and then removes the duplicate 11-5 entries in the app; Sprint 007 (pay periods matching pay stubs) waits on the two stubs.
+Sprint 007 is built and tested. The app now measures weeks Saturday to Friday and pay periods as fixed 14-day blocks starting 2026-01-10, which is exactly how your pay stubs and your original sheet work. Before writing any database changes I recomputed all 24 weeks from your sheet exports under the new model and every one matches the sheet's own weekly totals and running balances (the largest difference was under a hundredth of an hour); the three stub periods you gave me come out exactly as you listed them. Nothing is live yet and nothing is committed. Next: merge/deploy the code, then run the one SQL script right away, then check History and the Recap.
 
 ---
 
 ## Current status
 
-Sprint 006 (Leave Entry Bug Fix + Navigation Improvements) — complete, verified, not committed. No active sprint.
+Sprint 007 (Pay Cycle Alignment) — code complete and verified locally, SQL written, not committed, not deployed. 87/87 tests, typecheck and build clean. The SQL has not been run (the Builder has no database access). Sprint 006 (leave-bug fix, date jump, History links, Week 1/2 labels) was merged and verified live earlier today.
 
 ## Since last sprint
 
-- **Bug fix**: `getDayEntryDetail()` (`src/lib/data/entries.ts`) now always fetches leave (keyed by date) alongside the day record and loads sessions only when a day record exists. Assembly lives in a pure `buildDayEntryDetail` (`src/lib/data/entryDetail.ts`) with 3 regression tests (`tests/calculations/entryDetail.test.ts`). Audit: this was the only place gating data behind a `day_entries` row.
-- **Root-cause correction**: the July "leave not showing on mobile" report had this same cause; the `ActionForm` refresh fix addressed a symptom (harmless, kept).
-- **`DateJump`** (`src/components/DateJump.tsx`, new): date input that navigates on a complete date in 2000–2099; replaces the Go form; `goToDate` action removed.
-- **History**: period date ranges link to `/?period=<periodStart>`.
-- **Recap**: headings "Week 1"/"Week 2"; `isoWeekNumber` import removed from `page.tsx` (still used internally for pairing).
-- 86/86 tests pass (3 new), typecheck and build clean. DateJump verified in an isolated preview (bad year ignored, valid date navigates); real pages are behind login so the leave fix and links need the user's live check.
+- **New `src/lib/calculations/payCycle.ts`**: anchor `2026-01-10`, `payWeekStart`, `payPeriodStart`. Tested against the user's stub dates, the anchor, pre-anchor dates and Saturday-ness.
+- **Week boundary swapped everywhere**: `recap.ts`, `periods.ts`, `payPeriodRecap.ts`, `physicalYear.ts` (Weeks Left in Year now counts Sat-start weeks), `weekly.ts`, the Recap page (`?period=` snaps to its period start; malformed values fall back to the current period) and the History page. `isoWeek.ts`, `mondayOf` and their tests were deleted; a grep finds no ISO/Monday logic left in `src/` or `tests/`.
+- **Tests**: five existing test files re-based onto Sat–Fri weeks with no assertions weakened; new `payCycle.test.ts`; new permanent real-data test `payCycleRealData.test.ts` (the sheet's first three weeks: -9.37 / -11.97 / -16.97 from seed -12.12).
+- **Reconciliation gate (throwaway script, passed)**: 24/24 weeks Jan 10 – Jun 26 match the sheet's printed Actual and rolling balance; table recorded in `planning/DECISIONS.md`. The first run flagged one week by exactly 12 hrs — a bug in the script's time parsing ("2:00:00 PM" misread as 2 AM), not in the app or the stored data (confirmed against the Sprint 003 import SQL).
+- **`supabase/migration-007-sat-fri-weeks.sql`** (additive, idempotent, no deletes): imports 2026-01-10 (07:00–11:15), moves the three settings' effective date 2026-01-12 → 2026-01-10, sets the seed to -12.12.
 
 ## Architecture / file map
 
-- `src/lib/data/entryDetail.ts` (new, pure), `src/lib/data/entries.ts` (re-exports types, new `getDayEntryDetail`).
-- `src/components/DateJump.tsx` (new, fifth client component).
-- `src/app/(app)/entries/[date]/page.tsx`, `entries/actions.ts`, `history/page.tsx`, `page.tsx` — edited as above.
-- `docs/ARCHITECTURE.md` updated (leave is keyed by date; DateJump; History links).
+- `src/lib/calculations/payCycle.ts` (new); `isoWeek.ts` removed.
+- Edited: `recap.ts`, `weekly.ts`, `periods.ts`, `payPeriodRecap.ts`, `physicalYear.ts`, `src/app/(app)/page.tsx`, `src/app/(app)/history/page.tsx`.
+- `docs/ARCHITECTURE.md` has a "Pay Cycle (Sprint 007)" section; older sections that mention Monday–Sunday/ISO are marked superseded there.
 
 ## Decisions
 
-See `planning/DECISIONS.md` — 2026-11-05 entries: root cause, Sprint 006 scope, parked Sprint 007, and a closing entry with implementation details.
+See `planning/DECISIONS.md`: the 2026-11-05 entries (Sprint 007 supersedes the ISO and Monday–Sunday decisions; stubs matter for dates only) and the reconciliation table.
 
 ## Risks / watch-items
 
-- The 2026 53-ISO-week boundary (around 2026-12-28 / 2027-01-04) is imminent; Sprint 007's stub-aligned fixed cycle would remove it. Revisit urgency if Sprint 007 slips past late December.
-- No duplicate guard on leave entries (accepted for now; consider with Sprint 007).
-- Physical Year and holiday lists may need entries for the coming year.
-- Existing duplicate 2026-11-05 leave rows are still in the database until the user removes them in the UI (no SQL by the Builder).
+- **Release window**: after the deploy and before the SQL, week/period figures are briefly inconsistent (read-only). Run the SQL immediately; don't log entries in between.
+- If the SQL were run before the deploy instead, the old code would show a phantom Monday-based week — so deploy first.
+- The "all history changes at once" risk is mitigated by the gate (passed) and the real-data test.
+- The 2026 year-end ISO-53-week issue no longer applies.
+- The page-level `?period=` normalization is not unit-tested (it lives in the page); worth a live check with an old Monday-based link.
+- Physical Year and holiday lists may need entries for the coming year; no duplicate guard on leave (accepted).
 
 ## Open questions for the Architect
 
-How to anchor pay periods to the user's stubs (fixed start + 14-day cycles, semi-monthly, other) — blocked on the last two pay stubs.
+None blocking. Possible follow-ups the user may raise: stub paid-hours comparison (explicitly out of scope), a duplicate-leave guard.
 
 ## Validation / test status
 
-Automated: 86/86 tests, typecheck clean, production build clean. Live (real data) not yet verified — user to check 11-5 leave, History links, date picker after deploy.
+Automated: 87/87 tests, typecheck clean, production build clean (the usual Supabase Edge Runtime warning only). Reconciliation: 24/24 weeks match the sheet. Not yet verified against live data (needs deploy + SQL + the user's check).
 
 ## Recommended next Architect action
 
-Once the user sends the two pay stubs, discuss and scope Sprint 007 (pay-period alignment). Before that, nothing is needed from the Architect.
+None required. After the user deploys, runs the SQL and confirms History's periods match their stubs, close the loop (or open a small fix sprint if anything looks off).

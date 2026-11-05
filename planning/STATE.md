@@ -8,33 +8,33 @@
 
 ## Current Phase
 
-Sprint 006 Complete — Leave Entry Bug Fix + Navigation Improvements
+Sprint 007 Complete (code + SQL written) — awaiting deploy and the user running the SQL
 
 ---
 
 ## Current Status
 
-Sprint 005 (weekly Actual fix + week drill-down modal) is complete, committed (`e1810e8`), pushed, and deployed to Vercel (`https://time-tracker-red-six.vercel.app`, GitHub auto-deploy on push to `main`). The earlier planning-doc note saying it was "not yet committed" was stale and is corrected here.
+Sprint 006 (leave-entry bug fix, date jump, History links, Week 1/Week 2 labels) is complete, merged to `main` via PR, deployed to Vercel, and user-verified live (2026-11-05).
 
-**Sprint 006 is done and verified (not yet committed/pushed — awaiting the user).** It was triggered on 2026-11-05 the user reported a bug and three pain points:
+**Sprint 007 is now authorized.** The user supplied their last three pay periods: **Sep 19–Oct 2, Oct 3–Oct 16, Oct 17–Oct 30 (2026)**. These are **Saturday–Friday** blocks in a fixed 14-day cycle. Sep 19 is exactly 252 days (18 cycles) after **Sat 2026-01-10** — the first day of the user's original Google Sheet export, whose weekly blocks were also Saturday–Friday. The app, however, has used **Monday–Sunday weeks** and **ISO-odd/even pay periods** since Sprints 003–004, which is why its periods never matched the stubs.
 
-- **Bug (root cause found by the Architect, read-only)**: `getDayEntryDetail()` in `src/lib/data/entries.ts` returns early when the date has no `day_entries` row, before ever querying `leave_entries`. A `day_entries` row is only created when a session or break is saved, so a leave-only day shows an empty Leave list (nothing visible, nothing removable) even though the leave rows exist and are counted in the Recap totals. The user, seeing nothing happen, added leave repeatedly on 2026-11-05 until 72 hours accumulated (consistent with nine 8-hour entries). This is also the true root cause of the July "leave not showing on mobile" report — the `ActionForm`/`router.refresh()` fix addressed a symptom that was never a refresh problem (it is harmless and stays).
-- **Pain point 1**: the Daily Entry date picker should navigate as soon as a date is chosen — no "Go" button.
-- **Pain point 3**: History tab pay-period date ranges should link to that period's Recap.
-- **Pain point 4**: drop ISO week numbers from Recap headings; show "Week 1" / "Week 2" of the pay period.
-- **Pain point 2 (aligning pay periods to the user's pay stubs)** is deliberately deferred to **Sprint 007**, once the user provides the last two pay stubs. It reverses part of the July ISO-week decision.
+Decisions made with the user (2026-11-05):
+- **Saturday–Friday weeks everywhere**, pay period = two such weeks, fixed 14-day cycle anchored at 2026-01-10 (a documented code constant, not a setting).
+- Pay stubs matter **for dates only** — no stub amounts / paid-hours comparison.
+- This supersedes two earlier decisions: "ISO standard pay periods" (2026-07-09) and "weeks are Monday–Sunday" (Sprint 003).
+- Rolling balance re-seeds from the sheet's own carried-in value **-12.12 at 2026-01-10**; Jan 10 (4.25 hrs, 7:00–11:15) and Jan 11 (empty) become importable; the three settings' `effective_date` moves 2026-01-12 → 2026-01-10. All additive SQL run by the user, gated by a reconciliation script against the sheet's own weekly balances.
 
 ---
 
 ## Active Sprint
 
-None. Sprint 006 (`planning/sprints/006-leave-bug-and-navigation/`) is closed.
+None. Sprint 007 (`planning/sprints/007-pay-cycle-alignment/`) is closed from the Builder side; the user still has to merge/deploy and run the SQL.
 
 ---
 
 ## Active Work
 
-None. Delivered: `getDayEntryDetail()` now always loads leave (pure `buildDayEntryDetail` + 3 regression tests); `DateJump` client component replaces the Go form (`goToDate` removed); History period ranges link to `/?period=<start>`; Recap headings read "Week 1"/"Week 2". 86/86 tests, typecheck and build clean; DateJump behavior verified in an isolated preview (bad year ignored, valid date navigates).
+None for the Builder. Built: `payCycle.ts` (anchor 2026-01-10), Sat–Fri weeks/periods across recap, periods, physical year, Recap and History pages; `isoWeek.ts`/`mondayOf` removed; tests re-based (87/87 pass) plus a real-data test; reconciliation gate passed (24/24 weeks vs. the sheet); `supabase/migration-007-sat-fri-weeks.sql` written. Not committed.
 
 ---
 
@@ -56,35 +56,33 @@ None. Delivered: `getDayEntryDetail()` now always loads leave (pure `buildDayEnt
 
 ## v1 Scope Snapshot
 
-See `planning/DOMAIN.md` and `docs/ARCHITECTURE.md` for full detail. Current shipped scope (through Sprint 005), with Sprint 006 changes noted:
+See `planning/DOMAIN.md` and `docs/ARCHITECTURE.md`. Shipped through Sprint 006; Sprint 007 changes noted:
 
-- **Pay Period Recap** (landing page): Week 1 + Week 2 stats (ISO-paired odd/even; **Sprint 006**: headings read "Week 1"/"Week 2" instead of ISO week numbers), Actual/Delta counting every logged day in the week (Sprint 005), Rolling Balance as of the last fully-completed week, Leave Remaining (collapsible) + Weeks Left in Year, Prev/Next navigation, per-week "Actual" modal with hover split and Day column.
-- **Physical Year setting**: user-entered start/end date ranges, used for Weeks Left in Year.
-- **History tab**: period-level summary rows for fully-elapsed periods. **Sprint 006**: each period's date range links to that period's Recap.
-- **Daily Entry**: Break/Session/Leave forms (`ActionForm` refresh). **Sprint 006**: leave entries now load for any date (bug fix); date picker navigates on selection (no Go button).
-- **Nav**, **Appearance** (5 themes), **Historical import** (2026-01-12 onward), **Deployment** (Vercel auto-deploy): unchanged.
-- Out of scope: employer-specific pay-period anchoring for now (ISO pairing stays until Sprint 007), data before 2026-01-12, reports/analytics, multi-user.
+- **Pay Period Recap**: Week 1 / Week 2 stats, Actual/Delta counting every logged day, Rolling Balance as of the last fully-completed week, Leave Remaining (collapsible) + Weeks Left in Year, Prev/Next, per-week "Actual" modal with hover split and Day column. **Sprint 007**: weeks run Sat–Fri; a period is a fixed 14-day block anchored at 2026-01-10 (current period as of today: Oct 31 – Nov 13).
+- **History tab**: fully-elapsed pay-period summary rows, each range linking to that period's Recap. **Sprint 007**: re-grouped into the new periods (totals change by design).
+- **Daily Entry**, **Settings** (incl. Physical Year; **Sprint 007**: Weeks Left in Year counts Sat-start weeks), **Appearance**, **Deployment**: otherwise unchanged.
+- Out of scope: stub amounts / paid-hours comparison, a configurable pay-cycle anchor, reports/analytics, multi-user, data before 2026-01-10.
 
 ---
 
 ## Next Actions
 
-1. User decides whether to commit/push Sprint 006, then removes the duplicate 2026-11-05 leave entries via the Daily Entry page and checks History links and the date picker live.
-2. After Sprint 006 ships, the user supplies the last two pay stubs and the Architect scopes Sprint 007 (pay periods aligned to the stubs).
+1. User decides on commit/PR. Release order: merge → Vercel deploys → user immediately runs `supabase/migration-007-sat-fri-weeks.sql` in the Supabase SQL editor (display is briefly wrong in between; do not log entries in that window).
+2. User verifies live: History shows Sep 19–Oct 2, Oct 3–Oct 16, Oct 17–Oct 30; Recap's current period is Oct 31–Nov 13.
 
 ---
 
 ## Blockers
 
-None for Sprint 006. Sprint 007 is blocked on the user providing two pay stubs.
+None.
 
 ---
 
 ## Watch Items
 
-- **Year-boundary heads-up**: 2026 has 53 ISO weeks. The known, accepted limitation (Rule 17 — odd/even Week 1/Week 2 pairing doesn't alternate cleanly across a 53-week year boundary) will surface around the 2026-12-28 / 2027-01-04 weeks. Sprint 007's stub-aligned fixed-cycle approach would eliminate it; if Sprint 007 slips past late December, revisit.
-- The Physical Year list and paid-holiday list may need new entries for the coming year.
-- No duplicate guard exists on leave entries (adding the same leave twice is allowed). Not in scope for Sprint 006; consider alongside Sprint 007.
-- New earliest tracked Monday: `2026-01-12`. Rolling balance seed: `-7.87`.
-- 2026-01-10 and 2026-01-11 are NOT imported as discrete day records — documented, not a bug.
-- Process note: all work since 2026-07-14 goes through Architect discussion first, per the user's request.
+- **Do not log new data in the window between deploy and SQL run** (display only is briefly off; logging is harmless but confusing to verify).
+- The 53-ISO-week year-boundary limitation (old Rule 17) disappears with this sprint — fixed 14-day cycles don't depend on ISO weeks.
+- Physical Year and paid-holiday lists may need entries for the coming year.
+- No duplicate guard on leave entries (accepted).
+- 2026-01-10 will now be imported (4.25 hrs); 2026-01-11 is empty. Data before 2026-01-10 still does not exist.
+- Process: all work goes through Architect discussion first.

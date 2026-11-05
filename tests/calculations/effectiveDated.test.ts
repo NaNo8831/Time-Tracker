@@ -22,7 +22,7 @@ describe("valueInEffect", () => {
     const before = [{ value: 32, effectiveDate: "2026-01-01" }];
     const pastDateResultBefore = valueInEffect(before, "2026-03-01");
 
-    // Simulate adding a new dated entry effective "next Monday" — a future date.
+    // Simulate adding a new dated entry effective next week — a future date.
     const after = [...before, { value: 40, effectiveDate: "2026-07-13" }];
     const pastDateResultAfter = valueInEffect(after, "2026-03-01");
 

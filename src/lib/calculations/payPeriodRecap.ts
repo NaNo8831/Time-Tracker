@@ -20,7 +20,7 @@ export interface PayPeriodRecapResult {
 /**
  * Builds the Week 1 + Week 2 summary for the pay period starting at
  * `week1Start` (must already be a valid period start — see
- * isoWeek.ts's payPeriodWeek1Start). Extends the underlying weekly
+ * payCycle.ts's payPeriodStart). Extends the underlying weekly
  * computation through Week 2 even if it's still in the future, so a
  * currently-in-progress period always has both weeks to display.
  * Returns null if the period starts before any tracked history exists.
