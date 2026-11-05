@@ -2,37 +2,39 @@
 
 **Project:** Time Tracker
 **Client:** Ly-Ark
-**Last updated:** 2026-07-14
+**Last updated:** 2026-11-05
 
 ---
 
 ## Current Phase
 
-Sprint 005 Complete — Weekly Actual Fix + Week Drill-down Modal
+Sprint 006 Complete — Leave Entry Bug Fix + Navigation Improvements
 
 ---
 
 ## Current Status
 
-Sprint 005 is done and fully verified. The real bug the user found via screenshot — a week's "Actual" hours silently dropping real, already-logged data for days after today (e.g. pre-planned vacation) — is fixed: `buildWeeklyRecap()`'s day loop no longer stops at `today`. Live-verified against the user's own numbers: Week 29 went from a wrong 6.25 hrs to the correct 23.75 hrs, Week 30 from a wrong 0.00 hrs to the correct 40.00 hrs.
+Sprint 005 (weekly Actual fix + week drill-down modal) is complete, committed (`e1810e8`), pushed, and deployed to Vercel (`https://time-tracker-red-six.vercel.app`, GitHub auto-deploy on push to `main`). The earlier planning-doc note saying it was "not yet committed" was stale and is corrected here.
 
-On top of the fix: each week's "Actual" card now has a hover tooltip splitting hours-through-today vs. hours-already-logged-for-later-this-week (broken down by v/s/p), and clicking "Actual" opens a modal with that week's 7-day log (now including a Day-of-week column), replacing the always-visible 14-day table that used to sit at the bottom of the page. History tab and Rolling Balance's "last fully-completed week" logic are both confirmed unaffected (existing test suites for both pass unmodified).
+**Sprint 006 is done and verified (not yet committed/pushed — awaiting the user).** It was triggered on 2026-11-05 the user reported a bug and three pain points:
 
-Sprint 004 remains fully complete and live (SQL run, user-verified), the app is deployed to Vercel with GitHub auto-deploy, and the three unplanned post-Sprint-004 rounds (theming, mobile UX fixes, the `ActionForm` mobile-refresh fix) are all still in place.
-
-Not yet committed to git this session (user has not asked for a commit).
+- **Bug (root cause found by the Architect, read-only)**: `getDayEntryDetail()` in `src/lib/data/entries.ts` returns early when the date has no `day_entries` row, before ever querying `leave_entries`. A `day_entries` row is only created when a session or break is saved, so a leave-only day shows an empty Leave list (nothing visible, nothing removable) even though the leave rows exist and are counted in the Recap totals. The user, seeing nothing happen, added leave repeatedly on 2026-11-05 until 72 hours accumulated (consistent with nine 8-hour entries). This is also the true root cause of the July "leave not showing on mobile" report — the `ActionForm`/`router.refresh()` fix addressed a symptom that was never a refresh problem (it is harmless and stays).
+- **Pain point 1**: the Daily Entry date picker should navigate as soon as a date is chosen — no "Go" button.
+- **Pain point 3**: History tab pay-period date ranges should link to that period's Recap.
+- **Pain point 4**: drop ISO week numbers from Recap headings; show "Week 1" / "Week 2" of the pay period.
+- **Pain point 2 (aligning pay periods to the user's pay stubs)** is deliberately deferred to **Sprint 007**, once the user provides the last two pay stubs. It reverses part of the July ISO-week decision.
 
 ---
 
 ## Active Sprint
 
-None. Sprint 005's folder (`planning/sprints/005-weekly-actual-fix-and-week-drilldown/`) is closed.
+None. Sprint 006 (`planning/sprints/006-leave-bug-and-navigation/`) is closed.
 
 ---
 
 ## Active Work
 
-None. Everything from Sprint 005 is implemented, tested, and verified live (via an isolated non-auth preview reproducing the user's real scenario). Awaiting the user's next request.
+None. Delivered: `getDayEntryDetail()` now always loads leave (pure `buildDayEntryDetail` + 3 regression tests); `DateJump` client component replaces the Go form (`goToDate` removed); History period ranges link to `/?period=<start>`; Recap headings read "Week 1"/"Week 2". 86/86 tests, typecheck and build clean; DateJump behavior verified in an isolated preview (bad year ignored, valid date navigates).
 
 ---
 
@@ -54,40 +56,35 @@ None. Everything from Sprint 005 is implemented, tested, and verified live (via 
 
 ## v1 Scope Snapshot
 
-See `planning/DOMAIN.md` and `docs/ARCHITECTURE.md` for full detail. Current shipped scope (Sprint 004 plus the three unplanned rounds after it), with Sprint 005 changes noted:
+See `planning/DOMAIN.md` and `docs/ARCHITECTURE.md` for full detail. Current shipped scope (through Sprint 005), with Sprint 006 changes noted:
 
-- **Pay Period Recap** (landing page): Week 1 + Week 2 stats (ISO-week-numbered, odd/even paired). **Sprint 005**: Actual/Delta now count every day in the week's range, including days after today with real logged data — not just days through today. Rolling Balance as of the last fully-completed week (unchanged), Leave Remaining (collapsible) + Weeks Left in Year, Prev/Next period navigation (unlimited range). **Sprint 005**: the always-visible 14-day table at the bottom is removed; clicking a week's "Actual" card instead pops open that week's 7-day log in a modal, with a new Day-of-week column and an hover breakdown on "Actual" itself.
-- **Physical Year setting**: user-entered start/end date ranges (list-style, like Paid Holidays), used to compute Weeks Left in Year.
-- **History tab**: same period-list format, re-paired by ISO odd/even week, excludes the current in-progress period. **Unchanged by Sprint 005** — no per-week drill-down added here, by explicit user decision.
-- **Daily Entry**: "Recent Entries" list removed. Break/Session/Leave forms use a client-side `router.refresh()` after saving so changes always show immediately (mobile included).
-- **Nav**: ordered Daily Entry, Recap, History, Settings.
-- **Appearance**: 5-preset color/dark-mode picker in Settings, per-device (localStorage), applied instantly.
-- **Historical import**: full year to date (2026-01-12 through present), imported and user-verified.
-- **Deployment**: live on Vercel, GitHub auto-deploy on push to `main`.
-- Out of scope: employer-specific pay-period anchoring (ISO standard only, not configurable), any data before 2026-01-12, reports/analytics beyond what's described here, multi-user, History tab drill-down (explicitly deferred/declined this round).
+- **Pay Period Recap** (landing page): Week 1 + Week 2 stats (ISO-paired odd/even; **Sprint 006**: headings read "Week 1"/"Week 2" instead of ISO week numbers), Actual/Delta counting every logged day in the week (Sprint 005), Rolling Balance as of the last fully-completed week, Leave Remaining (collapsible) + Weeks Left in Year, Prev/Next navigation, per-week "Actual" modal with hover split and Day column.
+- **Physical Year setting**: user-entered start/end date ranges, used for Weeks Left in Year.
+- **History tab**: period-level summary rows for fully-elapsed periods. **Sprint 006**: each period's date range links to that period's Recap.
+- **Daily Entry**: Break/Session/Leave forms (`ActionForm` refresh). **Sprint 006**: leave entries now load for any date (bug fix); date picker navigates on selection (no Go button).
+- **Nav**, **Appearance** (5 themes), **Historical import** (2026-01-12 onward), **Deployment** (Vercel auto-deploy): unchanged.
+- Out of scope: employer-specific pay-period anchoring for now (ISO pairing stays until Sprint 007), data before 2026-01-12, reports/analytics, multi-user.
 
 ---
 
 ## Next Actions
 
-1. User to test Sprint 005 live once deployed (git push not yet requested this session) — spot-check the two real weeks from the original screenshot, try the modal on mobile.
-2. The earliest remaining historical gap is 2026-01-01 through 2026-01-09 (data not available). No action needed unless the user finds additional records later.
+1. User decides whether to commit/push Sprint 006, then removes the duplicate 2026-11-05 leave entries via the Daily Entry page and checks History links and the date picker live.
+2. After Sprint 006 ships, the user supplies the last two pay stubs and the Architect scopes Sprint 007 (pay periods aligned to the stubs).
 
 ---
 
 ## Blockers
 
-None.
+None for Sprint 006. Sprint 007 is blocked on the user providing two pay stubs.
 
 ---
 
 ## Watch Items
 
-- New earliest tracked Monday: `2026-01-12`. Rolling balance seed: `-7.87`. See `planning/DECISIONS.md`.
+- **Year-boundary heads-up**: 2026 has 53 ISO weeks. The known, accepted limitation (Rule 17 — odd/even Week 1/Week 2 pairing doesn't alternate cleanly across a 53-week year boundary) will surface around the 2026-12-28 / 2027-01-04 weeks. Sprint 007's stub-aligned fixed-cycle approach would eliminate it; if Sprint 007 slips past late December, revisit.
+- The Physical Year list and paid-holiday list may need new entries for the coming year.
+- No duplicate guard exists on leave entries (adding the same leave twice is allowed). Not in scope for Sprint 006; consider alongside Sprint 007.
+- New earliest tracked Monday: `2026-01-12`. Rolling balance seed: `-7.87`.
 - 2026-01-10 and 2026-01-11 are NOT imported as discrete day records — documented, not a bug.
-- Three inferred holiday labels (2026-04-02 "Holy Thursday", 2026-04-03 "Good Friday", 2026-04-06 "Easter Monday") — editable in Settings if wrong.
-- ISO week pairing has a known, accepted edge case in 53-ISO-week years — not solved in v1.
-- Do not implement employer-specific pay-period anchoring.
-- Sprint 005's fix confirmed NOT to change Rolling Balance's "last fully-completed week" selection logic or History tab's numbers — both existing test suites pass unmodified, plus a live spot-check.
-- Third and fourth deliberate client-side components now exist (`WeekLogModal.tsx`, after `ThemePicker`/`CollapsibleSection`/`ActionForm`) — still no shared modal abstraction; revisit only if a differently-shaped case shows up.
-- **Process note**: this session correctly routed the Sprint 005 request through a full Architect conversation before any code was touched (planning docs refreshed, pack written, code gate honored) — the pattern the user asked for after the earlier unplanned rounds.
+- Process note: all work since 2026-07-14 goes through Architect discussion first, per the user's request.

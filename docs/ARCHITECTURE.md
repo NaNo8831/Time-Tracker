@@ -1,6 +1,6 @@
 # Architecture
 
-Time Tracker v1 — architecture defined by the Architect Layer across Packs 001-005.
+Time Tracker v1 — architecture defined by the Architect Layer across Packs 001-006.
 
 ---
 
@@ -31,7 +31,7 @@ All effective-dated tables share the "most recent entry with effective_date <= t
 
 **Critical**: the earliest `weekly_target_settings` entry's `effective_date` determines the first week the whole app computes. As of Sprint 004 this is `2026-01-12`.
 
-**Important**: `day_entries`/`sessions`/`leave_entries` are not restricted to past dates — a user can and does log data (especially leave) for future dates. All weekly/daily calculations must treat "future" purely as "no data yet, naturally contributes 0," never as an artificial hard stop (Sprint 005 fixed a bug where the weekly aggregation incorrectly did the latter).
+**Important**: `leave_entries` is keyed by `date`, NOT by `day_entries` — a day can have leave with no day record (Sprint 006 fixed a bug where the Daily Entry page skipped leave when no day record existed). `day_entries`/`sessions`/`leave_entries` are not restricted to past dates — a user can and does log data (especially leave) for future dates. All weekly/daily calculations must treat "future" purely as "no data yet, naturally contributes 0," never as an artificial hard stop (Sprint 005 fixed a bug where the weekly aggregation incorrectly did the latter).
 
 ## Calculation Rules
 
@@ -42,14 +42,14 @@ Rules 1-5, 7-17 unchanged since Sprint 004 — see `planning/DOMAIN.md`. **Rule 
 ## Screens (v1, updated Sprint 005)
 
 - **Login** — Supabase Auth sign-in.
-- **Daily Entry** — first in nav order. Sessions, break override, leave hours, any date past or future. No "Recent Entries" list. Forms refresh via a client-side `router.refresh()` after saving.
-- **Pay Period Recap** (landing page) — Week 1 + Week 2 stats (Actual now correctly includes all logged days, not just through-today), Rolling Balance, Leave Remaining (collapsible), Weeks Left in Year, Prev/Next period navigation. **Sprint 005**: no more always-visible 14-day table; each week's "Actual" card opens a modal with that week's 7-day log (with a Day-of-week column) and carries a hover tooltip splitting hours through-today vs. later-this-week (by leave type).
-- **History** — every fully-elapsed pay period (excludes the current one), ISO odd/even paired, period-level summary rows only — no drill-down (unchanged by Sprint 005, by explicit decision).
+- **Daily Entry** — first in nav order. Sessions, break override, leave hours, any date past or future. No "Recent Entries" list. Forms refresh via a client-side `router.refresh()` after saving. Leave loads for any date; the date picker navigates on selection (Sprint 006).
+- **Pay Period Recap** (landing page) — Week 1 + Week 2 stats, headings "Week 1"/"Week 2" (Sprint 006), (Actual now correctly includes all logged days, not just through-today), Rolling Balance, Leave Remaining (collapsible), Weeks Left in Year, Prev/Next period navigation. **Sprint 005**: no more always-visible 14-day table; each week's "Actual" card opens a modal with that week's 7-day log (with a Day-of-week column) and carries a hover tooltip splitting hours through-today vs. later-this-week (by leave type).
+- **History** — every fully-elapsed pay period (excludes the current one), ISO odd/even paired, period-level summary rows only; each period range links to that period's Recap (Sprint 006).
 - **Settings** — weekly target, break duration, standard workday hours (under Paid Holidays), leave banks, holidays, Physical Year list, and Appearance (5 color/dark-mode presets).
 
 ## Client-side Interactivity
 
-The app is server-rendered by default (Server Components + Server Actions, no client-side data fetching). Three deliberate, scoped exceptions exist so far: the theme picker (`ThemePicker.tsx`), the collapsible section (`CollapsibleSection.tsx`), the form-refresh wrapper (`ActionForm.tsx`), and now (Sprint 005) the week drill-down modal. Each is a small, single-purpose client component — no shared modal/dialog abstraction exists yet; introduce one only if a fourth, differently-shaped case appears.
+The app is server-rendered by default (Server Components + Server Actions, no client-side data fetching). Three deliberate, scoped exceptions exist so far: the theme picker (`ThemePicker.tsx`), the collapsible section (`CollapsibleSection.tsx`), the form-refresh wrapper (`ActionForm.tsx`), the week drill-down modal (Sprint 005), and the Daily Entry date jump (`DateJump.tsx`, Sprint 006). Each is a small, single-purpose client component — no shared modal/dialog abstraction exists yet; introduce one only if a fourth, differently-shaped case appears.
 
 ## Migration
 

@@ -6,11 +6,6 @@ import * as entriesData from "@/lib/data/entries";
 import { findOverlappingSession } from "@/lib/calculations/sessionOverlap";
 import type { LeaveType } from "@/lib/types";
 
-export async function goToDate(formData: FormData) {
-  const date = String(formData.get("date"));
-  redirect(`/entries/${date}`);
-}
-
 export async function setBreak(formData: FormData) {
   const date = String(formData.get("date"));
   const raw = formData.get("breakMinutesOverride");
