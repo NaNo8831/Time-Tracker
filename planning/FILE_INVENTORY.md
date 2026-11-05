@@ -45,3 +45,12 @@ Use this file to track important project files, references, samples, and their s
 | `planning/sprints/005-weekly-actual-fix-and-week-drilldown/blueprint.md` | Bug-fix + modal technical design. | Created by Architect Pack 005 |
 | `planning/sprints/005-weekly-actual-fix-and-week-drilldown/acceptance.md` | Sprint 005 acceptance criteria. | Created by Architect Pack 005 |
 | `planning/sprints/005-weekly-actual-fix-and-week-drilldown/handoff-prompt.md` | Sprint 005 Builder handoff prompt. | Created by Architect Pack 005 |
+
+## Sprint 006 Deliverables
+
+| File | Purpose | Status |
+|---|---|---|
+| `planning/sprints/006-leave-bug-and-navigation/requirements.md` | Sprint 006 requirements. | Created by Architect Pack 006 |
+| `planning/sprints/006-leave-bug-and-navigation/blueprint.md` | Bug fix + navigation changes design. | Created by Architect Pack 006 |
+| `planning/sprints/006-leave-bug-and-navigation/acceptance.md` | Sprint 006 acceptance criteria. | Created by Architect Pack 006 |
+| `planning/sprints/006-leave-bug-and-navigation/handoff-prompt.md` | Sprint 006 Builder handoff prompt. | Created by Architect Pack 006 |

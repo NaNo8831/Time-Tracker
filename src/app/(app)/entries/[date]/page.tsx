@@ -3,10 +3,10 @@ import { LEAVE_TYPES } from "@/lib/types";
 import TimeSelect from "@/components/TimeSelect";
 import BreakMinutesSelect from "@/components/BreakMinutesSelect";
 import ActionForm from "@/components/ActionForm";
+import DateJump from "@/components/DateJump";
 import {
   addLeaveEntry,
   addSession,
-  goToDate,
   removeLeaveEntry,
   removeSession,
   setBreak,
@@ -30,21 +30,7 @@ export default async function DayEntryPage({
     <main className="mx-auto max-w-2xl space-y-8 px-4 py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-[var(--color-text)]">{date}</h1>
-        <form action={goToDate} className="flex items-end gap-2">
-          <input
-            name="date"
-            type="date"
-            defaultValue={date}
-            required
-            className="rounded-md border border-[var(--color-border-strong)] bg-[var(--color-card-bg)] px-2 py-1 text-sm text-[var(--color-text)]"
-          />
-          <button
-            type="submit"
-            className="rounded-md bg-[var(--color-btn-bg)] px-3 py-1.5 text-sm text-[var(--color-btn-text)] hover:bg-[var(--color-btn-bg-hover)]"
-          >
-            Go
-          </button>
-        </form>
+        <DateJump date={date} />
       </div>
 
       {searchParams.error && (

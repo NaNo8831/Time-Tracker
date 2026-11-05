@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { buildWeeklyRecap } from "@/lib/calculations/recap";
 import { groupWeeksIntoPayPeriods } from "@/lib/calculations/periods";
 import { payPeriodWeek1Start } from "@/lib/calculations/isoWeek";
@@ -62,7 +63,12 @@ export default async function HistoryPage() {
             {periods.map((period) => (
               <tr key={period.periodStart}>
                 <td className="px-3 py-1.5">
-                  {period.periodStart} – {period.periodEnd}
+                  <Link
+                    href={`/?period=${period.periodStart}`}
+                    className="text-[var(--color-accent)] underline"
+                  >
+                    {period.periodStart} – {period.periodEnd}
+                  </Link>
                 </td>
                 <td className="px-3 py-1.5 text-right">{period.actualHours.toFixed(2)}</td>
                 <td className="px-3 py-1.5 text-right">{period.targetHours.toFixed(2)}</td>

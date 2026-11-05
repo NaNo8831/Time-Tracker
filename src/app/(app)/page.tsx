@@ -2,7 +2,7 @@ import Link from "next/link";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import WeekLogModal from "@/components/WeekLogModal";
 import { buildPayPeriodRecap } from "@/lib/calculations/payPeriodRecap";
-import { isoWeekNumber, payPeriodWeek1Start } from "@/lib/calculations/isoWeek";
+import { payPeriodWeek1Start } from "@/lib/calculations/isoWeek";
 import { weeksLeftInYear } from "@/lib/calculations/physicalYear";
 import { addDays } from "@/lib/calculations/dates";
 import { splitWeekActual, type DailyBreakdownRow } from "@/lib/calculations/dailyBreakdown";
@@ -98,13 +98,13 @@ export default async function PayPeriodRecapPage({
       </div>
 
       <WeekSection
-        title={`Week ${isoWeekNumber(week1.weekStart)}`}
+        title="Week 1"
         week={week1}
         rows={week1Rows}
         today={today}
       />
       <WeekSection
-        title={`Week ${isoWeekNumber(week2.weekStart)}`}
+        title="Week 2"
         week={week2}
         rows={week2Rows}
         today={today}
