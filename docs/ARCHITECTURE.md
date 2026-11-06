@@ -78,3 +78,12 @@ Supersedes every Supabase data-access and auth statement above.
 - **Rendering**: with the Supabase client gone, pages no longer read cookies and would be pre-rendered at build; `src/app/(app)/layout.tsx` sets `export const dynamic = "force-dynamic"`.
 - **Scripts (user-run)**: `db:hash-password`, `db:migrate` (Supabase to Neon copy with count + md5 parity check), `db:backup` (SQL export to gitignored `backups/`). Procedures in `docs/OPERATIONS.md`.
 - **Env vars**: `DATABASE_URL`, `APP_PASSWORD_HASH`, `SESSION_SECRET` (plus one-time `SUPABASE_DB_URL` for the copy). `@supabase/*` packages and `src/lib/supabase/` are removed; `supabase/*.sql` is kept as history.
+
+## Last-backup note and Today link (Sprint 009)
+
+- **`last_backup` table** (`neon/schema.sql`, `neon/migration-009-last-backup.sql`): one row at most (`id` is always 1, `backed_up_at timestamptz`). Bookkeeping only; deliberately not in `scripts/lib/tables.mjs`, so it is not in the backup export or the Supabase copy parity check.
+- **Writer**: `scripts/backup-db.mjs` upserts the row after the backup file is saved. A failure to record prints a note and never fails or alters the backup.
+- **Reader**: `src/lib/data/backup.ts` `getLastBackupAt()` returns the timestamp or `null`, and never throws (a missing table or a failed query shows "No backup yet", so no page can break).
+- **Text/colour logic**: pure `src/lib/calculations/backupStatus.ts` `describeBackup()` (fixed English month names, UTC, stale when more than `STALE_AFTER_DAYS` = 35).
+- **Header**: `src/components/Nav.tsx` is an async server component; the note sits between the links and Sign out, full text from the `sm` breakpoint up and date-only below it. New theme token `--color-warning` (all 5 themes).
+- **Recap Today link**: pure `periodNav()` in `src/lib/calculations/payCycle.ts` returns `prev`/`next` (+/-14 days) and `isCurrent`; `src/app/(app)/page.tsx` shows `Prev, Today, Next`, with Today greyed out and not a link when `isCurrent`.

@@ -108,3 +108,12 @@ create table if not exists physical_year_settings (
 
 create index if not exists sessions_day_entry_id_idx on sessions (day_entry_id);
 create index if not exists leave_entries_date_idx on leave_entries (date);
+
+-- When the last backup (npm run db:backup) finished; shown in the app header.
+-- One row at most (id is always 1). Bookkeeping only: NOT part of the backup
+-- export or the Supabase copy. A fresh database starts with no row ("No backup yet").
+create table if not exists last_backup (
+  id smallint primary key default 1,
+  backed_up_at timestamptz not null,
+  constraint last_backup_single_row check (id = 1)
+);

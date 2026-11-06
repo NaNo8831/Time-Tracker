@@ -76,7 +76,24 @@ Neon's free plan keeps only a short restore history, so exports are your real sa
 npm run db:backup
 ```
 
-It writes `backups/time-tracker-YYYY-MM-DD.sql` (the `backups/` folder is gitignored — copy the file somewhere safe, e.g. cloud storage) and prints the row count per table. It only reads from the database.
+It writes `backups/time-tracker-YYYY-MM-DD.sql` (the `backups/` folder is gitignored — copy the file somewhere safe, e.g. cloud storage) and prints the row count per table. It only reads your data. The one thing it writes is the "last backup" date (see below), and only after the file is saved.
+
+### The "Last backup" note in the header
+
+Every page shows `Last backup: Nov 6 (3 days ago)` in the top bar, next to Sign out.
+
+- It is muted normally and turns **amber after 35 days**. `No backup yet` (amber) means no date has been recorded.
+- On a phone only the date is shown.
+- The date means `npm run db:backup` **finished writing the file**. It cannot know whether you copied the file somewhere safe, so keep doing that.
+- The date is one row in the `last_backup` table. It is not part of the backup file and not part of the Supabase copy.
+- If the script prints "Backup saved, but the date could not be recorded in the app", the file is fine; run `neon/migration-009-last-backup.sql` in Neon (below), then back up again.
+
+**One-time setup (Sprint 009), after the code is deployed:**
+
+1. Merge the PR and let Vercel deploy. The header shows `No backup yet` until step 2. That is expected and nothing else is affected.
+2. In the Neon SQL editor (production database), paste and run the contents of `neon/migration-009-last-backup.sql`. It is safe to re-run. It records **2026-11-06** as the starting date (the backup you already took and stored), and never overwrites a newer date.
+3. Reload the app: the header shows `Last backup: Nov 6 (N days ago)`.
+4. Next time you run `npm run db:backup`, the script prints "Recorded in the app header." and the date moves to that day.
 
 ### Restore
 

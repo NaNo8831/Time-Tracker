@@ -1,24 +1,23 @@
 # Architect Briefing
 
-**Last updated:** 2026-11-06 (Sprint 008 deployed and verified live)
+**Last updated:** 2026-11-06 (Sprint 009 built; awaiting merge, deploy and one SQL step)
 
 ---
 
 ## Where things stand
 
-Sprint 008 is finished and live. Time Tracker now stores its data in Neon (free) and signs you in with one password, so your second free Supabase project is free to use for something else once you delete the old one. You merged it, signed in on the live site, and the Recap and History matched your before screenshots. Next: take and test-restore a first backup, give it a few days, then remove the old Supabase variables and delete the Supabase project.
+Sprint 009 is built and tested. The top bar of the app will now show when you last took a backup (for example "Last backup: Nov 6 (3 days ago)"), turning amber after 35 days, and the Recap has a Today link between Prev and Next that jumps back to the current pay period. Nothing is live yet and nothing is committed. Next: merge it, let Vercel deploy, then run one small SQL file in Neon so the app knows about your Nov 6 backup. Until you run it the bar just says "No backup yet" and everything else works.
 
 ## Current status
 
-Sprint 008 (Supabase to Neon) is merged (PR #4) and deployed. The rehearsal copy and the final reset copy both matched on every table. A stale `.next` cache briefly made the local Recap look blank; clearing it fixed that, and it was not a code problem. Supabase is untouched and still holds a copy of the data; it is the fallback until the user deletes it.
+Sprint 009 (last-backup note + Today link) code complete on branch `sprint-009-backup-note-and-today-button`, uncommitted. tsc clean, 123/123 tests, build clean. The SQL was validated on an in-process Postgres; the Builder did not render the signed-in UI (no database access). Sprint 008 remains live and verified.
 
 ## Since last sprint
 
-- New data layer (`src/lib/db.ts`, `dbNormalize.ts`) and rewritten `entries.ts`/`recap.ts`/`settings.ts` with the same exports and row shapes.
-- Single-password login: scrypt hash env var, HMAC-signed 30-day cookie, middleware check, password-only login page.
-- `neon/schema.sql`; user-run scripts for hash creation, Supabase-to-Neon copy (count + checksum parity) and backup; `docs/OPERATIONS.md`.
-- `force-dynamic` on the signed-in layout (build had started pre-rendering pages).
-- Supabase packages and client files removed.
+- New one-row `last_backup` table (`neon/migration-009-last-backup.sql`, also in `neon/schema.sql`); `npm run db:backup` records its finish time after saving the file (a failure to record never affects the backup).
+- Never-throwing lookup `src/lib/data/backup.ts`; pure label/stale logic `backupStatus.ts` (stale after 35 days); async `Nav.tsx` shows the note; new `--color-warning` theme token.
+- Pure `periodNav()` in `payCycle.ts`; Recap row is Prev, Today, Next (Today greyed out on the current period).
+- 9 new tests; docs updated.
 
 ## Architecture / file map
 

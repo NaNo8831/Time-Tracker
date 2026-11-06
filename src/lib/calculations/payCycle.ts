@@ -48,3 +48,19 @@ export function payPeriodStart(date: IsoDate): IsoDate {
   const periods = Math.floor(daysBetween(PAY_CYCLE_ANCHOR, date) / 14);
   return addDays(PAY_CYCLE_ANCHOR, periods * 14);
 }
+
+/**
+ * Prev/Next targets for the Recap and whether it is showing the pay period that
+ * contains `today`. `week1Start` is the viewed period's start (already resolved
+ * by resolvePeriodStart). The "Today" link is only active when !isCurrent.
+ */
+export function periodNav(
+  week1Start: IsoDate,
+  today: IsoDate
+): { prev: IsoDate; next: IsoDate; isCurrent: boolean } {
+  return {
+    prev: addDays(week1Start, -14),
+    next: addDays(week1Start, 14),
+    isCurrent: week1Start === payPeriodStart(today),
+  };
+}

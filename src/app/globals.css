@@ -20,6 +20,7 @@
   --color-weekend-bg: #f8fafc;
   --color-error-bg: #fef2f2;
   --color-error-text: #b91c1c;
+  --color-warning: #b45309;
 }
 
 [data-theme="ocean"] {
@@ -39,6 +40,7 @@
   --color-weekend-bg: #f0f9ff;
   --color-error-bg: #fef2f2;
   --color-error-text: #b91c1c;
+  --color-warning: #b45309;
 }
 
 [data-theme="forest"] {
@@ -58,6 +60,7 @@
   --color-weekend-bg: #f0fdf4;
   --color-error-bg: #fef2f2;
   --color-error-text: #b91c1c;
+  --color-warning: #b45309;
 }
 
 [data-theme="rose"] {
@@ -77,6 +80,7 @@
   --color-weekend-bg: #fff1f2;
   --color-error-bg: #fef2f2;
   --color-error-text: #b91c1c;
+  --color-warning: #b45309;
 }
 
 [data-theme="dark"] {
@@ -96,4 +100,5 @@
   --color-weekend-bg: #172136;
   --color-error-bg: #450a0a;
   --color-error-text: #fca5a5;
+  --color-warning: #fbbf24;
 }
