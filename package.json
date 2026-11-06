@@ -10,7 +10,8 @@
     "test": "vitest run",
     "db:hash-password": "node scripts/hash-password.mjs",
     "db:migrate": "node --env-file=.env.local scripts/migrate-supabase-to-neon.mjs",
-    "db:backup": "node --env-file=.env.local scripts/backup-db.mjs"
+    "db:backup": "node --env-file=.env.local scripts/backup-db.mjs",
+    "db:check": "node scripts/check-app-db.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
