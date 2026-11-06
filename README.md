@@ -1,62 +1,43 @@
 # Time Tracker
 
-**Client:** Ly-Ark  
-**Description:** Time Tracker is a tool designed to help users track their worked time against a set target number of hours over the course a month with historical date to review.  
-**Project type:** Internal tool  
-**Tech stack:** Next.js and Supabase
+**Client:** Ly-Ark
+**Live site:** https://time-tracker-red-six.vercel.app (single-password login)
 
----
+Time Tracker is a personal tool for logging worked time against a weekly target and reviewing history. It shows a pay-period Recap (two Saturday-Friday weeks in a fixed 14-day cycle), a rolling balance, leave remaining, a per-week breakdown, and a History of past pay periods.
 
-## Purpose
+## Tech stack
 
-This project folder was created by the 120x Project Launcher for the 120x Architect / Builder workflow.
+- **App:** Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **Database:** Neon Postgres (`@neondatabase/serverless`), accessed only from the server
+- **Login:** one password (scrypt hash in an environment variable) with a signed, httpOnly cookie
+- **Hosting:** Vercel (auto-deploys `main`)
+- **Tests:** Vitest
+- **History:** the app ran on Supabase until Sprint 008 (2026-11-06)
 
-It is ready for project-specific discovery and architecture planning.
+## Running it locally
 
----
+```bash
+npm install
+npm run dev
+```
 
-## Project Metadata
+Create `.env.local` (never commit it) with `DATABASE_URL`, `APP_PASSWORD_HASH` and `SESSION_SECRET`. See `.env.local.example`, and `docs/OPERATIONS.md` for how to create each one.
 
-| Field | Value |
+## Useful scripts
+
+| Command | What it does |
 |---|---|
-| Project name | Time Tracker |
-| Client name | Ly-Ark |
-| Project slug | time-tracker |
-| One-sentence description | Time Tracker is a tool designed to help users track their worked time against a set target number of hours over the course a month with historical date to review. |
-| Project type | Internal tool |
-| Planning folder | time-tracker/ |
-| Implementation repo | Downloaded project folder |
-| Canonical GitHub repo | UNKNOWN |
-| Tech stack | Next.js and Supabase |
+| `npm test` | Runs the test suite. |
+| `npm run db:hash-password` | Creates the password hash and session secret. |
+| `npm run db:backup` | Exports the database to `backups/` (gitignored). Run monthly. |
+| `npm run db:check` | Read-only: shows which database the app connects to and row counts. |
+| `npm run db:migrate` | One-time Supabase to Neon copy (already done). |
 
----
+## Project docs
 
-## Current Status
+This project follows the 120x Architect / Builder method. Start with `AGENTS.md`, then `planning/STATE.md`.
 
-- Project folder created from the reusable 120x scaffold.
-- Starter docs have been personalized from CLI metadata.
-- No application code has been written yet.
-- Next workflow step is Architect Pack 001 for discovery and architecture planning.
-
----
-
-## Next Steps
-
-1. Review `project-start.md`.
-2. Open `architect-chat-starter-prompt.md`.
-3. Start a new Architect chat.
-4. Start Architect Pack 001 discovery.
-5. Generate Architect Pack 001 only after explicit approval.
-6. Save the Architect Pack in `planning/architect-packs/`.
-7. Dry-run the importer.
-8. Apply the Architect Pack after review.
-
-Dry-run command shape:
-
-`node scripts/apply-architect-pack.js planning/architect-packs/architect-pack-###-{sprint-name}.md --dry-run`
-
-Apply command shape:
-
-`node scripts/apply-architect-pack.js planning/architect-packs/architect-pack-###-{sprint-name}.md`
-
-After a pack is applied, Builders implement from the generated sprint files under `planning/sprints/`, not directly from the Architect Pack.
+- `docs/ARCHITECTURE.md`: how it is built
+- `docs/OPERATIONS.md`: environment variables, password changes, backups, restore, rollback
+- `docs/VALIDATION.md`: what has been tested
+- `planning/`: state, decisions, risks, sprints and Architect Packs

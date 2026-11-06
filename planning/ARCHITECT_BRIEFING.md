@@ -1,16 +1,16 @@
 # Architect Briefing
 
-**Last updated:** 2026-11-06 (Sprint 008 built; awaiting user cutover)
+**Last updated:** 2026-11-06 (Sprint 008 deployed and verified live)
 
 ---
 
 ## Where things stand
 
-Sprint 008 is built and tested. Time Tracker no longer depends on Supabase in code: data lives in Neon Postgres (free), and login is a single password instead of Supabase accounts. Everything I could check without your database passes, including a real sign-in test on a throwaway local server. Nothing is committed or live, and your Supabase project is untouched. Next: you create the Neon project and follow the cutover steps in `docs/OPERATIONS.md` (rehearse the copy, add three variables to Vercel, final copy, merge, check against screenshots).
+Sprint 008 is finished and live. Time Tracker now stores its data in Neon (free) and signs you in with one password, so your second free Supabase project is free to use for something else once you delete the old one. You merged it, signed in on the live site, and the Recap and History matched your before screenshots. Next: take and test-restore a first backup, give it a few days, then remove the old Supabase variables and delete the Supabase project.
 
 ## Current status
 
-Sprint 008 (Supabase to Neon) code complete on branch `sprint-008-supabase-to-neon`, uncommitted. tsc clean, 114/114 tests, build clean. The Builder could not reach either database; SQL and schema were validated on an in-process Postgres (PGlite).
+Sprint 008 (Supabase to Neon) is merged (PR #4) and deployed. The rehearsal copy and the final reset copy both matched on every table. A stale `.next` cache briefly made the local Recap look blank; clearing it fixed that, and it was not a code problem. Supabase is untouched and still holds a copy of the data; it is the fallback until the user deletes it.
 
 ## Since last sprint
 
@@ -45,4 +45,4 @@ See `docs/VALIDATION.md` "Sprint 008 Validation".
 
 ## Recommended next Architect action
 
-After a successful cutover and a few days live, plan removal of leftover Supabase variables/files and any follow-up features.
+Nothing is blocking. After the user has taken and test-restored a backup and removed the old Supabase variables and project, decide the next sprint (no feature work is currently planned). Automated backups were deliberately left out; revisit only if the user wants them.

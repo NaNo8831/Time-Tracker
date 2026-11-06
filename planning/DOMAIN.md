@@ -24,18 +24,18 @@ Internal tool (personal use, single user)
 
 ## Primary Users / Roles
 
-A single user (the project owner). Access gated by a single Supabase email/password login.
+A single user (the project owner). Access gated by a single password (Sprint 008; previously a Supabase email/password login).
 
 ---
 
 ## Target Workflow (v1, updated Sprint 005)
 
-- **Login**: single email/password login gates the whole app.
+- **Login**: a single password gates the whole app (signed 30-day cookie).
 - **Daily entry**: pick a date (any date — past OR future; nothing stops logging leave in advance), add one or more check-in/check-out session pairs, optionally override that day's break duration, optionally log leave hours. Reachable directly from the Pay Period Recap's week modal, or via its own nav tab (first in the nav order). No "recent entries" list. Saves refresh immediately via `router.refresh()`.
 - **Settings / Preferences**: weekly target hours, break duration default, standard workday hours (nested under Paid Holidays), three leave banks, paid holidays, a Physical Year list (start/end date pairs, used for Weeks Left in Year), and an Appearance section (5 color/dark-mode presets).
 - **Pay Period Recap (landing page)**: the current pay period — two Saturday–Friday weeks in a fixed 14-day cycle anchored at 2026-01-10 (Week 1 = first Sat–Fri, Week 2 = the next; matches the user's pay stubs) — showing each week's actual/target/delta (counting every logged day in the week's range), the Rolling Balance as of the last fully-completed week, Leave Remaining (collapsible), Weeks Left in Year, and Prev/Next navigation to adjacent pay periods (unlimited range). Each week's "Actual" card opens that week's 7-day log in a modal (Date, Day-of-week, Raw, Break, Other, Total) and carries a hover tooltip splitting the total into hours-through-today vs. hours-already-logged-for-later-this-week (by leave type).
 - **History tab**: every FULLY ELAPSED past pay period (never the current one, which lives on the landing page), same fixed 14-day cycle; period-level summary rows only, each range linking to that period's Recap.
-- **Migration**: one-time SQL-script imports of real sheet history, run directly against Supabase by the user, additive-only once real live data exists.
+- **Migration**: one-time SQL-script imports of real sheet history, run directly against the database by the user (Supabase until Sprint 008, Neon after), additive-only once real live data exists.
 
 ---
 

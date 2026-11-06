@@ -12,7 +12,7 @@
 | Planning folder | time-tracker/ |
 | Implementation repo path | Downloaded project folder |
 | Canonical GitHub repo | UNKNOWN |
-| Tech stack | Next.js and Supabase |
+| Tech stack | Next.js, Neon Postgres and Vercel |
 | Scaffold source | Hosted virtual scaffold |
 
 ## Created Structure
