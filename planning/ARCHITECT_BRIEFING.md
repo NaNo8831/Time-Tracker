@@ -1,16 +1,16 @@
 # Architect Briefing
 
-**Last updated:** 2026-11-06 (Sprint 009 built; awaiting merge, deploy and one SQL step)
+**Last updated:** 2026-11-06 (Sprint 009 live and verified)
 
 ---
 
 ## Where things stand
 
-Sprint 009 is built and tested. The top bar of the app will now show when you last took a backup (for example "Last backup: Nov 6 (3 days ago)"), turning amber after 35 days, and the Recap has a Today link between Prev and Next that jumps back to the current pay period. Nothing is live yet and nothing is committed. Next: merge it, let Vercel deploy, then run one small SQL file in Neon so the app knows about your Nov 6 backup. Until you run it the bar just says "No backup yet" and everything else works.
+Sprint 009 is finished and live. Time Tracker now shows when you last took a backup in the top bar (it turns amber after 35 days), and the Recap has a Today link that jumps back to the current pay period. You merged it, ran the one SQL step, and checked both features. Along with Sprint 008 earlier today, the app now runs on Neon with a one-password login, has a proven backup you have restored once, and nothing else is queued. Next: run a backup monthly, and delete the old Supabase project whenever you are comfortable.
 
 ## Current status
 
-Sprint 009 (last-backup note + Today link) code complete on branch `sprint-009-backup-note-and-today-button`, uncommitted. tsc clean, 123/123 tests, build clean. The SQL was validated on an in-process Postgres; the Builder did not render the signed-in UI (no database access). Sprint 008 remains live and verified.
+Sprint 009 (last-backup note + Today link) is merged (PR #7), deployed, and the user ran `neon/migration-009-last-backup.sql` and verified it live. 123/123 tests, tsc and build clean at merge. Sprint 008 (Neon + password login) is live and verified. No sprint is active. Supabase is untouched and still holds the 2026-11-06 copy as a fallback until the user deletes it.
 
 ## Since last sprint
 
@@ -44,4 +44,4 @@ See `docs/VALIDATION.md` "Sprint 008 Validation".
 
 ## Recommended next Architect action
 
-Nothing is blocking. After the user has taken and test-restored a backup and removed the old Supabase variables and project, decide the next sprint (no feature work is currently planned). Automated backups were deliberately left out; revisit only if the user wants them.
+Nothing is blocking and no sprint is planned. When the user returns, check whether they have removed the old Supabase variables and deleted the Supabase project, and ask whether anything new has come up. Automated backups or reminders were deliberately left out; revisit only if the user asks.
