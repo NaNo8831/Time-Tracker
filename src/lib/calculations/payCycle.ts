@@ -25,6 +25,24 @@ export function payWeekStart(date: IsoDate): IsoDate {
   return addDays(PAY_CYCLE_ANCHOR, weeks * 7);
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function isRealIsoDate(value: string): boolean {
+  if (!ISO_DATE.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+/**
+ * Resolves the Recap's `?period=` value to a pay period start. A well-formed,
+ * real calendar date snaps to its period start (so old Monday-based links keep
+ * working); anything else — missing, malformed, or impossible like 2026-13-45
+ * — falls back to the period containing `today`.
+ */
+export function resolvePeriodStart(requested: string | undefined, today: IsoDate): IsoDate {
+  return payPeriodStart(requested && isRealIsoDate(requested) ? requested : today);
+}
+
 /** The Saturday that starts the 14-day pay period containing `date` (Week 1's start). */
 export function payPeriodStart(date: IsoDate): IsoDate {
   const periods = Math.floor(daysBetween(PAY_CYCLE_ANCHOR, date) / 14);

@@ -2,7 +2,7 @@ import Link from "next/link";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import WeekLogModal from "@/components/WeekLogModal";
 import { buildPayPeriodRecap } from "@/lib/calculations/payPeriodRecap";
-import { payPeriodStart } from "@/lib/calculations/payCycle";
+import { resolvePeriodStart } from "@/lib/calculations/payCycle";
 import { weeksLeftInYear } from "@/lib/calculations/physicalYear";
 import { addDays } from "@/lib/calculations/dates";
 import { splitWeekActual, type DailyBreakdownRow } from "@/lib/calculations/dailyBreakdown";
@@ -41,10 +41,8 @@ export default async function PayPeriodRecapPage({
   searchParams: { period?: string };
 }) {
   const today = todayIso();
-  const requested = searchParams.period;
-  const validRequested = requested && /^d{4}-d{2}-d{2}$/.test(requested) && !Number.isNaN(Date.parse(requested));
-  // Snap any date (including old Monday-based links) to its pay period start.
-  const week1Start = payPeriodStart(validRequested ? requested : today);
+  // Snaps any valid date (including old Monday-based links) to its pay period start.
+  const week1Start = resolvePeriodStart(searchParams.period, today);
   const week2Start = addDays(week1Start, 7);
 
   const [input, physicalYears] = await Promise.all([getRecapInput(today), getPhysicalYears()]);

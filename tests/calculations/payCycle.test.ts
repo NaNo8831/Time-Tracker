@@ -1,5 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { PAY_CYCLE_ANCHOR, payPeriodStart, payWeekStart } from "@/lib/calculations/payCycle";
+import { PAY_CYCLE_ANCHOR, payPeriodStart, payWeekStart, resolvePeriodStart } from "@/lib/calculations/payCycle";
+
+describe("resolvePeriodStart (the Recap's ?period= value)", () => {
+  const today = "2026-11-05"; // inside the period starting 2026-10-31
+
+  it("returns a valid period start unchanged — what Prev/Next and History links pass", () => {
+    expect(resolvePeriodStart("2026-10-17", today)).toBe("2026-10-17");
+    expect(resolvePeriodStart("2026-10-03", today)).toBe("2026-10-03");
+    expect(resolvePeriodStart("2026-11-14", today)).toBe("2026-11-14");
+  });
+
+  it("snaps any other valid date, including old Monday-based links, to its period start", () => {
+    expect(resolvePeriodStart("2026-10-20", today)).toBe("2026-10-17"); // a Tuesday
+    expect(resolvePeriodStart("2026-10-12", today)).toBe("2026-10-03"); // a Monday
+  });
+
+  it("falls back to the current period for missing, malformed, or impossible values", () => {
+    for (const bad of [undefined, "", "abc", "dddd-dd-dd", "2026-13-45", "2026-02-30", "26-10-17", "2026-10-17x"]) {
+      expect(resolvePeriodStart(bad, today)).toBe("2026-10-31");
+    }
+  });
+});
 
 describe("payPeriodStart", () => {
   it("matches the user's real pay stub periods", () => {
