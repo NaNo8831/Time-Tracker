@@ -8,7 +8,7 @@
 
 ## Current Phase
 
-Sprint 008 Built — awaiting user cutover (Neon Postgres + single-password login); not committed
+Sprint 008 Complete — live on Neon with single-password login (2026-11-06); post-cutover cleanup pending
 
 ---
 
@@ -35,7 +35,7 @@ This supersedes: "Auth is Supabase email/password" (2026-07-09), "Backups rely o
 
 ## Active Work
 
-Code complete and verified locally (tsc clean, 114/114 tests, build clean, SQL checked on PGlite, login smoke-tested). Nothing is committed (branch `sprint-008-supabase-to-neon`). The user now runs the cutover in `docs/OPERATIONS.md`; the Builder has no database access.
+None. Sprint 008 was merged (PR #4) and verified live by the user on 2026-11-06: login works, Recap and History match the pre-cutover screenshots. Supabase still holds a copy of the data from the final copy and is the fallback until the user deletes it.
 
 ---
 
@@ -51,7 +51,7 @@ Code complete and verified locally (tsc clean, 114/114 tests, build clean, SQL c
 | Planning folder | time-tracker/ |
 | Implementation repo | Downloaded project folder |
 | Canonical GitHub repo | github.com/NaNo8831/Time-Tracker |
-| Tech stack | Next.js 14 (App Router), Neon Postgres (Supabase until Sprint 008 ships), single-password cookie login (Supabase Auth until Sprint 008 ships), Tailwind CSS, Vitest, Vercel |
+| Tech stack | Next.js 14 (App Router), Neon Postgres, single-password cookie login, Tailwind CSS, Vitest, Vercel |
 
 ---
 
@@ -65,9 +65,10 @@ Features are unchanged by Sprint 008 (see `planning/DOMAIN.md`): Pay Period Reca
 
 ## Next Actions
 
-1. User: put `DATABASE_URL` in this project's `.env.local` (it was missing when checked), create the Neon project, run `neon/schema.sql`, take before screenshots, rehearse `npm run db:migrate`, add the three env vars to Vercel, final copy, merge, verify.
-2. User: confirm the Prev/Next hotfix works live; take a first backup and test-restore it.
-3. Afterwards the user removes old Supabase vars and deletes the Time Tracker Supabase project.
+1. User: run `npm run db:backup` and test-restore it into a scratch Neon database (a backup only counts once restored).
+2. User: after a few good days, remove `NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY` (Vercel, all environments) and `SUPABASE_DB_URL` (.env.local), then delete the Time Tracker project in Supabase.
+3. User: confirm Settings > Physical Year shows its row on the live site (Supabase had 1; a stale local page showed none).
+4. Architect: choose the next sprint; none is planned.
 
 ---
 

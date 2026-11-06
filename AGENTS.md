@@ -5,7 +5,7 @@
 **Name:** Time Tracker  
 **Client:** Ly-Ark  
 **Description:** Time Tracker is a tool designed to help users track their worked time against a set target number of hours over the course a month with historical date to review.  
-**Tech stack:** Next.js and Supabase  
+**Tech stack:** Next.js, Neon Postgres and Vercel  
 **Planning folder:** `time-tracker/`  
 **Implementation repo:** Downloaded project folder  
 **Created:** 2026-07-08
