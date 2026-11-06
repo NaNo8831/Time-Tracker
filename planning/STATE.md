@@ -8,32 +8,32 @@
 
 ## Current Phase
 
-Sprint 009 Built — awaiting merge, deploy and the user's one SQL step; not committed
+Sprint 009 Complete — live (2026-11-06); no sprint active
 
 ---
 
 ## Current Status
 
-Sprint 008 (move to Neon Postgres + single-password login) is complete: merged (PR #4), deployed, verified live by the user on 2026-11-06 (Recap and History match the pre-cutover screenshots). The user took a first full backup with `npm run db:backup` and test-restored it into a scratch Neon database: every table's row count matched, scratch project deleted. The backup file is stored safely off the computer. Supabase still holds a copy of the data and is the fallback until the user deletes the project (their own step, after a few good days).
+Everything planned is built, merged, deployed and verified live by the user (2026-11-06):
 
-**Sprint 009 is now authorized.** Two small quality-of-life changes the user asked for, decisions made in the Architect conversation:
+- **Sprint 007** — Saturday–Friday weeks and fixed 14-day pay periods anchored 2026-01-10 (with the Prev/Next hotfix, PR #3).
+- **Sprint 008** — data moved from Supabase to Neon Postgres, Supabase Auth replaced by a single-password login (PR #4). Rehearsal and final copies matched on every table; Recap and History match the pre-cutover screenshots. A first full backup was taken, stored safely off the computer, and test-restored into a scratch Neon database (row counts matched; scratch project deleted).
+- **Sprint 009** — "Last backup: <date> (N days ago)" note in the app header (amber after 35 days; `No backup yet` if none; recorded by `npm run db:backup` in the one-row `last_backup` table, seeded with 2026-11-06) and a "Today" link between Prev and Next on the Recap (PR #7). The user ran the SQL and confirmed it works.
+- Monthly backup reminder added to `docs/OPERATIONS.md` (PR #6); README and stack lines updated (PR #5).
 
-- **Last-backup note:** shown in the app header (the Nav bar, in the free space between the Settings link and "Sign out"), not buried in Settings. Reads e.g. `Last backup: Nov 6 (3 days ago)`; turns amber after 35 days; says `No backup yet` before any is recorded. The date is stored in the database: one tiny new table, written by `npm run db:backup` after the file is saved. The user runs one SQL statement in Neon that creates the table and records **2026-11-06** as the starting date (the backup they already took and stored).
-- **Today link:** on the Recap, between Prev and Next (`← Prev   Today   Next →`). It goes to the current pay period. It is greyed out and not clickable when the user is already viewing the current period.
-
-No calculation, page layout (beyond those two spots), or existing table changes.
+Supabase still holds a copy of the data from the 2026-11-06 final copy and is the fallback until the user deletes the project (their own step).
 
 ---
 
 ## Active Sprint
 
-`planning/sprints/009-backup-note-and-today-button/`
+None. Last completed: `planning/sprints/009-backup-note-and-today-button/`.
 
 ---
 
 ## Active Work
 
-Code complete and verified locally (tsc clean, 123/123 tests, build clean, SQL checked on PGlite). Nothing is committed (branch `sprint-009-backup-note-and-today-button`). After merge/deploy the user runs `neon/migration-009-last-backup.sql` in Neon (steps in `docs/OPERATIONS.md`); the Builder has no database access.
+None.
 
 ---
 
@@ -55,18 +55,18 @@ Code complete and verified locally (tsc clean, 123/123 tests, build clean, SQL c
 
 ## v1 Scope Snapshot
 
-Pay Period Recap (Sat–Fri weeks, fixed 14-day periods anchored 2026-01-10), per-week modal, History with links to each period, Daily Entry, Settings (incl. Physical Year, 5 themes), single-password login, user-run backup script, Vercel auto-deploy. Sprint 009 adds the header backup note and the Recap "Today" link only.
+Pay Period Recap (Sat–Fri weeks, fixed 14-day periods anchored 2026-01-10, Prev / Today / Next), per-week modal, History with links to each period, Daily Entry, Settings (incl. Physical Year, 5 themes), single-password login, user-run backup script with a "last backup" note in the header, Vercel auto-deploy.
 
-- Out of scope: any calculation or data-model change, automated/scheduled backups, backup emails or notifications, in-app backup button, multi-user, stub paid-hours comparison.
+- Out of scope: automated/scheduled backups or reminders, an in-app backup button, multi-user, stub paid-hours comparison.
 
 ---
 
 ## Next Actions
 
-1. User: merge the Sprint 009 PR; after Vercel deploys, run `neon/migration-009-last-backup.sql` in the Neon SQL editor and reload (header should show `Last backup: Nov 6`); next `npm run db:backup` should print "Recorded in the app header."
-2. User (independent): after a few good days remove `NEXT_PUBLIC_SUPABASE_*` and `SUPABASE_SERVICE_ROLE_KEY` from Vercel and `SUPABASE_DB_URL` from `.env.local`, then delete the Time Tracker project in Supabase.
-3. User: confirm Settings > Physical Year shows its row on the live site.
-4. Architect: no further sprint planned.
+1. User (monthly): run `npm run db:backup` and copy the file somewhere safe; the header shows the date and turns amber after 35 days.
+2. User (their own pace, after a few good days): remove `NEXT_PUBLIC_SUPABASE_*` and `SUPABASE_SERVICE_ROLE_KEY` from Vercel (all environments) and `SUPABASE_DB_URL` from `.env.local`, then delete the Time Tracker project in Supabase.
+3. User: confirm Settings > Physical Year shows its row on the live site (the restore test shows 1 row exists).
+4. Architect: no further sprint planned; start one when new needs come up (`/architect`).
 
 ---
 
@@ -78,10 +78,10 @@ None.
 
 ## Watch Items
 
-- **Deploy order**: deploy the code first, then the user runs the SQL. Until the SQL runs, the header must show `No backup yet` and every page must still load (the backup lookup must never throw).
-- **What the note means**: the date records that `npm run db:backup` finished writing the file, not that the user copied it somewhere safe. The docs and the UI wording must not claim more.
-- **Backup script becomes a writer**: it was read-only; it will now write exactly one row (`last_backup`) after the file is saved. A failure to record must never fail or hide a successful backup.
-- The new table is bookkeeping, not user data: it is excluded from the backup export and the Supabase-to-Neon copy script, but is part of `neon/schema.sql`.
-- Free-tier terms change often; confirm on neon.com before relying on any specific limit.
-- Keep URL/param parsing and "is this the current period" logic in tested pure helpers (lesson from the Prev/Next hotfix, PR #3).
+- **Supabase fallback**: its data copy dates from 2026-11-06; it is stale for anything logged since. Do not roll back to it after real new entries without re-entering them.
+- **What the header date means**: the backup script finished writing the file, not that the user copied it somewhere safe.
+- **Type/timezone parity**: the data layer must keep returning the shapes the app has always received ('YYYY-MM-DD' strings, ISO timestamps whose characters 11-16 are HH:MM in UTC, numbers for hours).
+- **Neon free plan**: sleeps when idle (first page after a gap is slower) and has a short restore window; terms change, so confirm on neon.com before relying on any limit. Backups are the real safety net.
+- **Stale local cache**: if the dev Recap ever looks blank, stop `npm run dev`, delete the `.next` folder and restart (this caused the blank page during the Sprint 008 rehearsal; it was not a code bug).
+- The user's DB passwords live in the gitignored `supabase/information.md` and `.env.local`; never commit credentials or paste them into chat.
 - No duplicate guard on leave entries (accepted). Physical Year and holiday lists may need entries for the coming year.

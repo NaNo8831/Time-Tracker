@@ -28,7 +28,7 @@ Create `.env.local` (never commit it) with `DATABASE_URL`, `APP_PASSWORD_HASH` a
 |---|---|
 | `npm test` | Runs the test suite. |
 | `npm run db:hash-password` | Creates the password hash and session secret. |
-| `npm run db:backup` | Exports the database to `backups/` (gitignored). Run monthly. |
+| `npm run db:backup` | Exports the database to `backups/` (gitignored) and updates the "Last backup" date in the app header. Run monthly. |
 | `npm run db:check` | Read-only: shows which database the app connects to and row counts. |
 | `npm run db:migrate` | One-time Supabase to Neon copy (already done). |
 
