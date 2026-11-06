@@ -9,7 +9,11 @@
 // docs/OPERATIONS.md. A backup is only trusted once you have restored it into
 // a scratch database at least once.
 //
-// Needs DATABASE_URL in .env.local. Read-only; never prints the connection string.
+// Needs DATABASE_URL in .env.local. It only READS your data; the one thing it
+// writes is the "last backup" date (one row in last_backup) AFTER the file is
+// saved, so the app header can show how fresh your backup is. If that date
+// cannot be recorded the backup file is still saved. Never prints the
+// connection string.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import pg from "pg";
@@ -59,6 +63,20 @@ try {
 
   console.log(`Backup written to ${file}\n`);
   for (const [name, count] of counts) console.log(`${name.padEnd(34)} ${count}`);
+
+  // Record the date for the app header. Never let this affect the saved backup.
+  try {
+    await client.query(
+      `insert into last_backup (id, backed_up_at) values (1, now())
+         on conflict (id) do update set backed_up_at = excluded.backed_up_at`
+    );
+    console.log("\nRecorded in the app header.");
+  } catch {
+    console.log(
+      "\nBackup saved, but the date could not be recorded in the app. " +
+        "Run neon/migration-009-last-backup.sql in Neon, then back up again."
+    );
+  }
 } finally {
   await client.end();
 }

@@ -8,34 +8,32 @@
 
 ## Current Phase
 
-Sprint 008 Complete — live on Neon with single-password login (2026-11-06); post-cutover cleanup pending
+Sprint 009 Built — awaiting merge, deploy and the user's one SQL step; not committed
 
 ---
 
 ## Current Status
 
-Sprint 007 (Saturday–Friday weeks, fixed 14-day pay periods anchored 2026-01-10) is complete: merged, deployed, its SQL run by the user, and the new period dates confirmed live (2026-11-05). A follow-up hotfix (PR #3, `resolvePeriodStart()`) fixed the Recap's Prev/Next buttons and History links, which had all been showing the current period; it is merged to `main` — the user should confirm Prev/Next now works.
+Sprint 008 (move to Neon Postgres + single-password login) is complete: merged (PR #4), deployed, verified live by the user on 2026-11-06 (Recap and History match the pre-cutover screenshots). The user took a first full backup with `npm run db:backup` and test-restored it into a scratch Neon database: every table's row count matched, scratch project deleted. The backup file is stored safely off the computer. Supabase still holds a copy of the data and is the fallback until the user deletes the project (their own step, after a few good days).
 
-**Sprint 008 is now authorized.** The user needs their second free Supabase project for something else and asked to move Time Tracker's data storage to something free. Research (2026-11-06) found **Neon** (permanent free plan, no card; per Neon's own FAQ 100 projects × 1 GB each, scales to zero and wakes automatically) the best fit because the tables are already Postgres. Decisions made with the user:
+**Sprint 009 is now authorized.** Two small quality-of-life changes the user asked for, decisions made in the Architect conversation:
 
-- **Database:** Neon Postgres, accessed only from the server with a secret connection string.
-- **Login:** replace Supabase Auth with **one password** (stored hashed in an environment variable) plus a signed login cookie.
-- **Backups:** a script the user runs for a full export; Neon's free restore window is short, so exports are the real safety net.
-- Supabase stays untouched until the user has verified the new setup; deleting the Supabase project is the user's own later step.
+- **Last-backup note:** shown in the app header (the Nav bar, in the free space between the Settings link and "Sign out"), not buried in Settings. Reads e.g. `Last backup: Nov 6 (3 days ago)`; turns amber after 35 days; says `No backup yet` before any is recorded. The date is stored in the database: one tiny new table, written by `npm run db:backup` after the file is saved. The user runs one SQL statement in Neon that creates the table and records **2026-11-06** as the starting date (the backup they already took and stored).
+- **Today link:** on the Recap, between Prev and Next (`← Prev   Today   Next →`). It goes to the current pay period. It is greyed out and not clickable when the user is already viewing the current period.
 
-This supersedes: "Auth is Supabase email/password" (2026-07-09), "Backups rely on Supabase's built-in automatic backups" (2026-07-09), and "RLS enabled on all tables" (the database is no longer reachable from the browser at all).
+No calculation, page layout (beyond those two spots), or existing table changes.
 
 ---
 
 ## Active Sprint
 
-`planning/sprints/008-supabase-to-neon/`
+`planning/sprints/009-backup-note-and-today-button/`
 
 ---
 
 ## Active Work
 
-None. Sprint 008 was merged (PR #4) and verified live by the user on 2026-11-06: login works, Recap and History match the pre-cutover screenshots. Supabase still holds a copy of the data from the final copy and is the fallback until the user deletes it.
+Code complete and verified locally (tsc clean, 123/123 tests, build clean, SQL checked on PGlite). Nothing is committed (branch `sprint-009-backup-note-and-today-button`). After merge/deploy the user runs `neon/migration-009-last-backup.sql` in Neon (steps in `docs/OPERATIONS.md`); the Builder has no database access.
 
 ---
 
@@ -57,18 +55,18 @@ None. Sprint 008 was merged (PR #4) and verified live by the user on 2026-11-06:
 
 ## v1 Scope Snapshot
 
-Features are unchanged by Sprint 008 (see `planning/DOMAIN.md`): Pay Period Recap (Sat–Fri weeks, fixed 14-day periods anchored 2026-01-10), per-week modal, History with links to each period, Daily Entry (date picker auto-navigates, leave loads on any date), Settings (incl. Physical Year, 5 themes), Vercel auto-deploy. Sprint 008 changes only where data is stored and how login works.
+Pay Period Recap (Sat–Fri weeks, fixed 14-day periods anchored 2026-01-10), per-week modal, History with links to each period, Daily Entry, Settings (incl. Physical Year, 5 themes), single-password login, user-run backup script, Vercel auto-deploy. Sprint 009 adds the header backup note and the Recap "Today" link only.
 
-- Out of scope: any feature change, schema redesign, multi-user, stub paid-hours comparison, deleting the Supabase project (user does that after verifying).
+- Out of scope: any calculation or data-model change, automated/scheduled backups, backup emails or notifications, in-app backup button, multi-user, stub paid-hours comparison.
 
 ---
 
 ## Next Actions
 
-1. User: run `npm run db:backup` and test-restore it into a scratch Neon database (a backup only counts once restored).
-2. User: after a few good days, remove `NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY` (Vercel, all environments) and `SUPABASE_DB_URL` (.env.local), then delete the Time Tracker project in Supabase.
-3. User: confirm Settings > Physical Year shows its row on the live site (Supabase had 1; a stale local page showed none).
-4. Architect: choose the next sprint; none is planned.
+1. User: merge the Sprint 009 PR; after Vercel deploys, run `neon/migration-009-last-backup.sql` in the Neon SQL editor and reload (header should show `Last backup: Nov 6`); next `npm run db:backup` should print "Recorded in the app header."
+2. User (independent): after a few good days remove `NEXT_PUBLIC_SUPABASE_*` and `SUPABASE_SERVICE_ROLE_KEY` from Vercel and `SUPABASE_DB_URL` from `.env.local`, then delete the Time Tracker project in Supabase.
+3. User: confirm Settings > Physical Year shows its row on the live site.
+4. Architect: no further sprint planned.
 
 ---
 
@@ -80,10 +78,10 @@ None.
 
 ## Watch Items
 
-- **Cutover safety**: Supabase stays untouched and its Vercel env vars stay in place until the new setup is verified; rollback = redeploy the previous Vercel deployment.
-- **Data freeze**: don't log entries between the final data copy and the cutover (a few minutes).
-- **Supabase free tier** connects directly over IPv6 only; the copy script should use Supabase's "Session pooler" connection string if the user's network lacks IPv6.
-- **Type/timezone parity**: the new data layer must return exactly the shapes the app has always received ('YYYY-MM-DD' strings, ISO timestamps whose characters 11–16 are HH:MM in UTC, numbers for hours). A mismatch would silently shift displayed times.
-- Free-tier terms change often (figures come from Neon's own FAQ and third-party comparison pages); confirm on neon.com before cutover.
-- The user's DB passwords live in the gitignored `supabase/information.md`; never commit credentials or paste them into chat.
+- **Deploy order**: deploy the code first, then the user runs the SQL. Until the SQL runs, the header must show `No backup yet` and every page must still load (the backup lookup must never throw).
+- **What the note means**: the date records that `npm run db:backup` finished writing the file, not that the user copied it somewhere safe. The docs and the UI wording must not claim more.
+- **Backup script becomes a writer**: it was read-only; it will now write exactly one row (`last_backup`) after the file is saved. A failure to record must never fail or hide a successful backup.
+- The new table is bookkeeping, not user data: it is excluded from the backup export and the Supabase-to-Neon copy script, but is part of `neon/schema.sql`.
+- Free-tier terms change often; confirm on neon.com before relying on any specific limit.
+- Keep URL/param parsing and "is this the current period" logic in tested pure helpers (lesson from the Prev/Next hotfix, PR #3).
 - No duplicate guard on leave entries (accepted). Physical Year and holiday lists may need entries for the coming year.

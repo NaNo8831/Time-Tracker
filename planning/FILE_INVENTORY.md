@@ -89,3 +89,16 @@ Use this file to track important project files, references, samples, and their s
 | `docs/OPERATIONS.md` | Env vars, cutover, rollback, backups, restore. | Built |
 | `tests/auth/*.test.ts`, `tests/data/rowParity.test.ts` | Session, password and shape-parity tests. | Built |
 | `src/lib/supabase/{client,server}.ts` | Removed. | Deleted |
+
+## Sprint 009 Deliverables
+
+| File | Purpose | Status |
+|---|---|---|
+| `planning/sprints/009-backup-note-and-today-button/*` | Sprint 009 requirements, blueprint, acceptance, handoff. | Created by Architect Pack 009 |
+| `neon/migration-009-last-backup.sql` | Creates `last_backup` and records 2026-11-06. | Built; user runs after deploy |
+| `neon/schema.sql` | Adds `last_backup` (no seed). | Edited |
+| `scripts/backup-db.mjs` | Records the last-backup date after saving the file. | Edited |
+| `src/lib/data/backup.ts`, `src/lib/calculations/backupStatus.ts` | Never-throwing lookup; label/stale logic. | Built |
+| `src/components/Nav.tsx`, `src/app/globals.css`, `docs/THEMING.md` | Header note; `--color-warning` token. | Edited |
+| `src/lib/calculations/payCycle.ts`, `src/app/(app)/page.tsx` | `periodNav`; Prev/Today/Next. | Edited |
+| `tests/calculations/backupStatus.test.ts`, `tests/calculations/payCycle.test.ts` | New and extended tests. | Built |

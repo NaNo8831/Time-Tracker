@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PAY_CYCLE_ANCHOR, payPeriodStart, payWeekStart, resolvePeriodStart } from "@/lib/calculations/payCycle";
+import { PAY_CYCLE_ANCHOR, payPeriodStart, payWeekStart, periodNav, resolvePeriodStart } from "@/lib/calculations/payCycle";
 
 describe("resolvePeriodStart (the Recap's ?period= value)", () => {
   const today = "2026-11-05"; // inside the period starting 2026-10-31
@@ -70,5 +70,27 @@ describe("payWeekStart", () => {
     const dayOffset = (new Date("2026-07-15T00:00:00Z").getTime() - new Date(`${start}T00:00:00Z`).getTime()) / 86400000;
     expect(dayOffset).toBeGreaterThanOrEqual(0);
     expect(dayOffset).toBeLessThan(7);
+  });
+});
+
+describe("periodNav (Prev / Today / Next on the Recap)", () => {
+  const today = "2026-11-05"; // inside the period starting 2026-10-31
+
+  it("marks the period containing today as current", () => {
+    expect(periodNav("2026-10-31", today).isCurrent).toBe(true);
+    // today anywhere in the period still points at the same period start
+    expect(periodNav("2026-10-31", "2026-11-13").isCurrent).toBe(true);
+    expect(periodNav("2026-10-31", "2026-10-31").isCurrent).toBe(true);
+  });
+
+  it("is not current for past or future periods", () => {
+    expect(periodNav("2026-10-17", today).isCurrent).toBe(false);
+    expect(periodNav("2026-01-10", today).isCurrent).toBe(false);
+    expect(periodNav("2026-11-14", today).isCurrent).toBe(false);
+  });
+
+  it("gives Prev and Next as exactly 14 days either side", () => {
+    expect(periodNav("2026-10-31", today)).toMatchObject({ prev: "2026-10-17", next: "2026-11-14" });
+    expect(periodNav("2027-01-02", today)).toMatchObject({ prev: "2026-12-19", next: "2027-01-16" });
   });
 });

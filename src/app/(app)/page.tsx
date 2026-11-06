@@ -2,7 +2,7 @@ import Link from "next/link";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import WeekLogModal from "@/components/WeekLogModal";
 import { buildPayPeriodRecap } from "@/lib/calculations/payPeriodRecap";
-import { resolvePeriodStart } from "@/lib/calculations/payCycle";
+import { periodNav, resolvePeriodStart } from "@/lib/calculations/payCycle";
 import { weeksLeftInYear } from "@/lib/calculations/physicalYear";
 import { addDays } from "@/lib/calculations/dates";
 import { splitWeekActual, type DailyBreakdownRow } from "@/lib/calculations/dailyBreakdown";
@@ -81,8 +81,7 @@ export default async function PayPeriodRecapPage({
   );
 
   const { week1, week2, rollingBalance, leaveBankRemaining } = payPeriod;
-  const prevPeriod = addDays(week1Start, -14);
-  const nextPeriod = addDays(week1Start, 14);
+  const { prev: prevPeriod, next: nextPeriod, isCurrent } = periodNav(week1Start, today);
 
   return (
     <main className="mx-auto max-w-2xl space-y-8 px-4 py-8">
@@ -92,6 +91,15 @@ export default async function PayPeriodRecapPage({
           <Link href={`/?period=${prevPeriod}`} className="text-[var(--color-accent)] underline">
             ← Prev
           </Link>
+          {isCurrent ? (
+            <span aria-disabled="true" className="text-[var(--color-text-faint)] opacity-60">
+              Today
+            </span>
+          ) : (
+            <Link href="/" className="text-[var(--color-accent)] underline">
+              Today
+            </Link>
+          )}
           <Link href={`/?period=${nextPeriod}`} className="text-[var(--color-accent)] underline">
             Next →
           </Link>

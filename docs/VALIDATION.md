@@ -2,6 +2,13 @@
 
 Per the Micro-app rigor profile: cover the happy path and the one or two failure modes that would lose the user's data. Do not over-test.
 
+## Sprint 009 Validation (done 2026-11-06 by the Builder; live checks by the user after deploy + SQL)
+
+- `npx tsc --noEmit` clean, `npx vitest run` 123/123 (9 new: backup status labels/boundary/year/future/garbage, `periodNav`), `npm run build` clean.
+- `neon/schema.sql` and `neon/migration-009-last-backup.sql` run against PGlite (in-process Postgres): schema twice is safe; the migration seeds 2026-11-06 12:00 UTC once, a re-run does not overwrite a newer value; `id = 2` is rejected; the migration also works alone on an empty database.
+- `scripts/backup-db.mjs` syntax-checked; the recording step is wrapped so a failure cannot affect the saved file.
+- **Not verified by the Builder (user, after deploy)**: the header before the SQL (`No backup yet`, amber, pages still load), after the SQL (`Last backup: Nov 6 (N days ago)`), after the next `npm run db:backup` ("Recorded in the app header." and today's date), the Today link on current/past periods, and the phone-width header. The Builder did not render the signed-in UI (no database access, password unknown).
+
 ## Sprint 008 Validation (done 2026-11-06 by the Builder; live checks by the user at cutover)
 
 - `npx tsc --noEmit` clean, `npx vitest run` 114/114, `npm run build` clean (after adding `force-dynamic`).
