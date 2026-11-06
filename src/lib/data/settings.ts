@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { query } from "@/lib/db";
+import { toDateText, toNumber } from "@/lib/dbNormalize";
 import type { IsoDate, LeaveType } from "@/lib/types";
 
 export interface WeeklyTargetSetting {
@@ -40,63 +41,58 @@ export interface PhysicalYear {
   note: string | null;
 }
 
+// Duplicate-date inserts fail with Postgres code 23505 (unique violation);
+// the Neon driver surfaces it as `error.code`, which settings/actions.ts checks.
+
 export async function getWeeklyTargetSettings(): Promise<WeeklyTargetSetting[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("weekly_target_settings")
-    .select("id, hours, effective_date")
-    .order("effective_date", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
+  const rows = await query<{ id: string; hours: number; effective_date: string }>(
+    `select id, hours::float8 as hours, effective_date::text as effective_date
+       from weekly_target_settings order by weekly_target_settings.effective_date desc`
+  );
+  return rows.map((row) => ({
     id: row.id,
-    hours: row.hours,
-    effectiveDate: row.effective_date,
+    hours: toNumber(row.hours),
+    effectiveDate: toDateText(row.effective_date),
   }));
 }
 
 export async function addWeeklyTargetSetting(hours: number, effectiveDate: IsoDate) {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from("weekly_target_settings")
-    .insert({ hours, effective_date: effectiveDate });
-  if (error) throw error;
+  await query(`insert into weekly_target_settings (hours, effective_date) values ($1::numeric, $2::date)`, [
+    hours,
+    effectiveDate,
+  ]);
 }
 
 export async function getBreakDurationSettings(): Promise<BreakDurationSetting[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("break_duration_settings")
-    .select("id, minutes, effective_date")
-    .order("effective_date", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
+  const rows = await query<{ id: string; minutes: number; effective_date: string }>(
+    `select id, minutes::float8 as minutes, effective_date::text as effective_date
+       from break_duration_settings order by break_duration_settings.effective_date desc`
+  );
+  return rows.map((row) => ({
     id: row.id,
-    minutes: row.minutes,
-    effectiveDate: row.effective_date,
+    minutes: toNumber(row.minutes),
+    effectiveDate: toDateText(row.effective_date),
   }));
 }
 
 export async function addBreakDurationSetting(minutes: number, effectiveDate: IsoDate) {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from("break_duration_settings")
-    .insert({ minutes, effective_date: effectiveDate });
-  if (error) throw error;
+  await query(`insert into break_duration_settings (minutes, effective_date) values ($1::numeric, $2::date)`, [
+    minutes,
+    effectiveDate,
+  ]);
 }
 
 export async function getStandardWorkdayHoursSettings(): Promise<
   StandardWorkdayHoursSetting[]
 > {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("standard_workday_hours_settings")
-    .select("id, hours, effective_date")
-    .order("effective_date", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
+  const rows = await query<{ id: string; hours: number; effective_date: string }>(
+    `select id, hours::float8 as hours, effective_date::text as effective_date
+       from standard_workday_hours_settings order by standard_workday_hours_settings.effective_date desc`
+  );
+  return rows.map((row) => ({
     id: row.id,
-    hours: row.hours,
-    effectiveDate: row.effective_date,
+    hours: toNumber(row.hours),
+    effectiveDate: toDateText(row.effective_date),
   }));
 }
 
@@ -104,25 +100,29 @@ export async function addStandardWorkdayHoursSetting(
   hours: number,
   effectiveDate: IsoDate
 ) {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from("standard_workday_hours_settings")
-    .insert({ hours, effective_date: effectiveDate });
-  if (error) throw error;
+  await query(
+    `insert into standard_workday_hours_settings (hours, effective_date) values ($1::numeric, $2::date)`,
+    [hours, effectiveDate]
+  );
 }
 
 export async function getLeaveBankEntries(): Promise<LeaveBankEntry[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("leave_banks")
-    .select("id, leave_type, total_hours, effective_date, note")
-    .order("effective_date", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
+  const rows = await query<{
+    id: string;
+    leave_type: LeaveType;
+    total_hours: number;
+    effective_date: string;
+    note: string | null;
+  }>(
+    `select id, leave_type, total_hours::float8 as total_hours,
+            effective_date::text as effective_date, note
+       from leave_banks order by leave_banks.effective_date desc`
+  );
+  return rows.map((row) => ({
     id: row.id,
     leaveType: row.leave_type,
-    totalHours: row.total_hours,
-    effectiveDate: row.effective_date,
+    totalHours: toNumber(row.total_hours),
+    effectiveDate: toDateText(row.effective_date),
     note: row.note,
   }));
 }
@@ -133,46 +133,37 @@ export async function addLeaveBankEntry(
   effectiveDate: IsoDate,
   note: string | null
 ) {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from("leave_banks")
-    .insert({ leave_type: leaveType, total_hours: totalHours, effective_date: effectiveDate, note });
-  if (error) throw error;
+  await query(
+    `insert into leave_banks (leave_type, total_hours, effective_date, note)
+       values ($1, $2::numeric, $3::date, $4)`,
+    [leaveType, totalHours, effectiveDate, note]
+  );
 }
 
 export async function getHolidays(): Promise<Holiday[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("holidays")
-    .select("id, date, label")
-    .order("date", { ascending: true });
-  if (error) throw error;
-  return data ?? [];
+  const rows = await query<{ id: string; date: string; label: string }>(
+    `select id, date::text as date, label from holidays order by holidays.date asc`
+  );
+  return rows.map((row) => ({ id: row.id, date: toDateText(row.date), label: row.label }));
 }
 
 export async function addHoliday(date: IsoDate, label: string) {
-  const supabase = createClient();
-  const { error } = await supabase.from("holidays").insert({ date, label });
-  if (error) throw error;
+  await query(`insert into holidays (date, label) values ($1::date, $2)`, [date, label]);
 }
 
 export async function removeHoliday(id: string) {
-  const supabase = createClient();
-  const { error } = await supabase.from("holidays").delete().eq("id", id);
-  if (error) throw error;
+  await query(`delete from holidays where id = $1::uuid`, [id]);
 }
 
 export async function getPhysicalYears(): Promise<PhysicalYear[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("physical_year_settings")
-    .select("id, start_date, end_date, note")
-    .order("start_date", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
+  const rows = await query<{ id: string; start_date: string; end_date: string; note: string | null }>(
+    `select id, start_date::text as start_date, end_date::text as end_date, note
+       from physical_year_settings order by physical_year_settings.start_date desc`
+  );
+  return rows.map((row) => ({
     id: row.id,
-    startDate: row.start_date,
-    endDate: row.end_date,
+    startDate: toDateText(row.start_date),
+    endDate: toDateText(row.end_date),
     note: row.note,
   }));
 }
@@ -182,15 +173,12 @@ export async function addPhysicalYear(
   endDate: IsoDate,
   note: string | null
 ) {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from("physical_year_settings")
-    .insert({ start_date: startDate, end_date: endDate, note });
-  if (error) throw error;
+  await query(
+    `insert into physical_year_settings (start_date, end_date, note) values ($1::date, $2::date, $3)`,
+    [startDate, endDate, note]
+  );
 }
 
 export async function removePhysicalYear(id: string) {
-  const supabase = createClient();
-  const { error } = await supabase.from("physical_year_settings").delete().eq("id", id);
-  if (error) throw error;
+  await query(`delete from physical_year_settings where id = $1::uuid`, [id]);
 }

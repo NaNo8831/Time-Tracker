@@ -1,48 +1,28 @@
-import { createServerClient, type SetAllCookies } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth/session";
 
 const PUBLIC_PATHS = ["/login"];
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request });
-
-  const setAll: SetAllCookies = (cookiesToSet) => {
-    cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-    response = NextResponse.next({ request });
-    cookiesToSet.forEach(({ name, value, options }) =>
-      response.cookies.set(name, value, options)
-    );
-  };
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll,
-      },
-    }
+  // Checks the signed login cookie only — no network call. Password checking
+  // happens in the sign-in server action (Node runtime), not here.
+  const isSignedIn = await verifySessionToken(
+    request.cookies.get(SESSION_COOKIE)?.value,
+    process.env.SESSION_SECRET
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const pathname = request.nextUrl.pathname;
+  const isPublicPath = PUBLIC_PATHS.includes(pathname);
 
-  const isPublicPath = PUBLIC_PATHS.includes(request.nextUrl.pathname);
-
-  if (!user && !isPublicPath) {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+  if (!isSignedIn && !isPublicPath) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (user && request.nextUrl.pathname === "/login") {
+  if (isSignedIn && pathname === "/login") {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {

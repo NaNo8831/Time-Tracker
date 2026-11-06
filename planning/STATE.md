@@ -2,39 +2,40 @@
 
 **Project:** Time Tracker
 **Client:** Ly-Ark
-**Last updated:** 2026-11-05
+**Last updated:** 2026-11-06
 
 ---
 
 ## Current Phase
 
-Sprint 007 Complete (code + SQL written) — awaiting deploy and the user running the SQL
+Sprint 008 Built — awaiting user cutover (Neon Postgres + single-password login); not committed
 
 ---
 
 ## Current Status
 
-Sprint 006 (leave-entry bug fix, date jump, History links, Week 1/Week 2 labels) is complete, merged to `main` via PR, deployed to Vercel, and user-verified live (2026-11-05).
+Sprint 007 (Saturday–Friday weeks, fixed 14-day pay periods anchored 2026-01-10) is complete: merged, deployed, its SQL run by the user, and the new period dates confirmed live (2026-11-05). A follow-up hotfix (PR #3, `resolvePeriodStart()`) fixed the Recap's Prev/Next buttons and History links, which had all been showing the current period; it is merged to `main` — the user should confirm Prev/Next now works.
 
-**Sprint 007 is now authorized.** The user supplied their last three pay periods: **Sep 19–Oct 2, Oct 3–Oct 16, Oct 17–Oct 30 (2026)**. These are **Saturday–Friday** blocks in a fixed 14-day cycle. Sep 19 is exactly 252 days (18 cycles) after **Sat 2026-01-10** — the first day of the user's original Google Sheet export, whose weekly blocks were also Saturday–Friday. The app, however, has used **Monday–Sunday weeks** and **ISO-odd/even pay periods** since Sprints 003–004, which is why its periods never matched the stubs.
+**Sprint 008 is now authorized.** The user needs their second free Supabase project for something else and asked to move Time Tracker's data storage to something free. Research (2026-11-06) found **Neon** (permanent free plan, no card; per Neon's own FAQ 100 projects × 1 GB each, scales to zero and wakes automatically) the best fit because the tables are already Postgres. Decisions made with the user:
 
-Decisions made with the user (2026-11-05):
-- **Saturday–Friday weeks everywhere**, pay period = two such weeks, fixed 14-day cycle anchored at 2026-01-10 (a documented code constant, not a setting).
-- Pay stubs matter **for dates only** — no stub amounts / paid-hours comparison.
-- This supersedes two earlier decisions: "ISO standard pay periods" (2026-07-09) and "weeks are Monday–Sunday" (Sprint 003).
-- Rolling balance re-seeds from the sheet's own carried-in value **-12.12 at 2026-01-10**; Jan 10 (4.25 hrs, 7:00–11:15) and Jan 11 (empty) become importable; the three settings' `effective_date` moves 2026-01-12 → 2026-01-10. All additive SQL run by the user, gated by a reconciliation script against the sheet's own weekly balances.
+- **Database:** Neon Postgres, accessed only from the server with a secret connection string.
+- **Login:** replace Supabase Auth with **one password** (stored hashed in an environment variable) plus a signed login cookie.
+- **Backups:** a script the user runs for a full export; Neon's free restore window is short, so exports are the real safety net.
+- Supabase stays untouched until the user has verified the new setup; deleting the Supabase project is the user's own later step.
+
+This supersedes: "Auth is Supabase email/password" (2026-07-09), "Backups rely on Supabase's built-in automatic backups" (2026-07-09), and "RLS enabled on all tables" (the database is no longer reachable from the browser at all).
 
 ---
 
 ## Active Sprint
 
-None. Sprint 007 (`planning/sprints/007-pay-cycle-alignment/`) is closed from the Builder side; the user still has to merge/deploy and run the SQL.
+`planning/sprints/008-supabase-to-neon/`
 
 ---
 
 ## Active Work
 
-None for the Builder. Built: `payCycle.ts` (anchor 2026-01-10), Sat–Fri weeks/periods across recap, periods, physical year, Recap and History pages; `isoWeek.ts`/`mondayOf` removed; tests re-based (87/87 pass) plus a real-data test; reconciliation gate passed (24/24 weeks vs. the sheet); `supabase/migration-007-sat-fri-weeks.sql` written. Not committed.
+Code complete and verified locally (tsc clean, 114/114 tests, build clean, SQL checked on PGlite, login smoke-tested). Nothing is committed (branch `sprint-008-supabase-to-neon`). The user now runs the cutover in `docs/OPERATIONS.md`; the Builder has no database access.
 
 ---
 
@@ -50,25 +51,23 @@ None for the Builder. Built: `payCycle.ts` (anchor 2026-01-10), Sat–Fri weeks/
 | Planning folder | time-tracker/ |
 | Implementation repo | Downloaded project folder |
 | Canonical GitHub repo | github.com/NaNo8831/Time-Tracker |
-| Tech stack | Next.js 14 (App Router), Supabase (Postgres + Auth via `@supabase/ssr`), Tailwind CSS, Vitest, Vercel |
+| Tech stack | Next.js 14 (App Router), Neon Postgres (Supabase until Sprint 008 ships), single-password cookie login (Supabase Auth until Sprint 008 ships), Tailwind CSS, Vitest, Vercel |
 
 ---
 
 ## v1 Scope Snapshot
 
-See `planning/DOMAIN.md` and `docs/ARCHITECTURE.md`. Shipped through Sprint 006; Sprint 007 changes noted:
+Features are unchanged by Sprint 008 (see `planning/DOMAIN.md`): Pay Period Recap (Sat–Fri weeks, fixed 14-day periods anchored 2026-01-10), per-week modal, History with links to each period, Daily Entry (date picker auto-navigates, leave loads on any date), Settings (incl. Physical Year, 5 themes), Vercel auto-deploy. Sprint 008 changes only where data is stored and how login works.
 
-- **Pay Period Recap**: Week 1 / Week 2 stats, Actual/Delta counting every logged day, Rolling Balance as of the last fully-completed week, Leave Remaining (collapsible) + Weeks Left in Year, Prev/Next, per-week "Actual" modal with hover split and Day column. **Sprint 007**: weeks run Sat–Fri; a period is a fixed 14-day block anchored at 2026-01-10 (current period as of today: Oct 31 – Nov 13).
-- **History tab**: fully-elapsed pay-period summary rows, each range linking to that period's Recap. **Sprint 007**: re-grouped into the new periods (totals change by design).
-- **Daily Entry**, **Settings** (incl. Physical Year; **Sprint 007**: Weeks Left in Year counts Sat-start weeks), **Appearance**, **Deployment**: otherwise unchanged.
-- Out of scope: stub amounts / paid-hours comparison, a configurable pay-cycle anchor, reports/analytics, multi-user, data before 2026-01-10.
+- Out of scope: any feature change, schema redesign, multi-user, stub paid-hours comparison, deleting the Supabase project (user does that after verifying).
 
 ---
 
 ## Next Actions
 
-1. User decides on commit/PR. Release order: merge → Vercel deploys → user immediately runs `supabase/migration-007-sat-fri-weeks.sql` in the Supabase SQL editor (display is briefly wrong in between; do not log entries in that window).
-2. User verifies live: History shows Sep 19–Oct 2, Oct 3–Oct 16, Oct 17–Oct 30; Recap's current period is Oct 31–Nov 13.
+1. User: put `DATABASE_URL` in this project's `.env.local` (it was missing when checked), create the Neon project, run `neon/schema.sql`, take before screenshots, rehearse `npm run db:migrate`, add the three env vars to Vercel, final copy, merge, verify.
+2. User: confirm the Prev/Next hotfix works live; take a first backup and test-restore it.
+3. Afterwards the user removes old Supabase vars and deletes the Time Tracker Supabase project.
 
 ---
 
@@ -80,9 +79,10 @@ None.
 
 ## Watch Items
 
-- **Do not log new data in the window between deploy and SQL run** (display only is briefly off; logging is harmless but confusing to verify).
-- The 53-ISO-week year-boundary limitation (old Rule 17) disappears with this sprint — fixed 14-day cycles don't depend on ISO weeks.
-- Physical Year and paid-holiday lists may need entries for the coming year.
-- No duplicate guard on leave entries (accepted).
-- 2026-01-10 will now be imported (4.25 hrs); 2026-01-11 is empty. Data before 2026-01-10 still does not exist.
-- Process: all work goes through Architect discussion first.
+- **Cutover safety**: Supabase stays untouched and its Vercel env vars stay in place until the new setup is verified; rollback = redeploy the previous Vercel deployment.
+- **Data freeze**: don't log entries between the final data copy and the cutover (a few minutes).
+- **Supabase free tier** connects directly over IPv6 only; the copy script should use Supabase's "Session pooler" connection string if the user's network lacks IPv6.
+- **Type/timezone parity**: the new data layer must return exactly the shapes the app has always received ('YYYY-MM-DD' strings, ISO timestamps whose characters 11–16 are HH:MM in UTC, numbers for hours). A mismatch would silently shift displayed times.
+- Free-tier terms change often (figures come from Neon's own FAQ and third-party comparison pages); confirm on neon.com before cutover.
+- The user's DB passwords live in the gitignored `supabase/information.md`; never commit credentials or paste them into chat.
+- No duplicate guard on leave entries (accepted). Physical Year and holiday lists may need entries for the coming year.
