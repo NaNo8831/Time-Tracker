@@ -1,7 +1,6 @@
 # Time Tracker
 
-**Client:** Ly-Ark
-**Live site:** https://time-tracker-red-six.vercel.app (single-password login)
+**Client:** 
 
 Time Tracker is a personal tool for logging worked time against a weekly target and reviewing history. It shows a pay-period Recap (two Saturday-Friday weeks in a fixed 14-day cycle), a rolling balance, leave remaining, a per-week breakdown, and a History of past pay periods.
 
