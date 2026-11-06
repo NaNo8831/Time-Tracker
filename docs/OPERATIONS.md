@@ -70,6 +70,8 @@ Once you're happy for a while: remove the old `NEXT_PUBLIC_SUPABASE_*` and `SUPA
 
 ## Backups
 
+> **Monthly reminder:** run `npm run db:backup` on the 1st of each month and copy the file to cloud storage. The first backup was test-restored successfully on 2026-11-06 (every table's row count matched), so the file format is proven; re-test a restore only if the backup script or schema changes.
+
 Neon's free plan keeps only a short restore history, so exports are your real safety net. Run one monthly and before any risky change:
 
 ```bash
