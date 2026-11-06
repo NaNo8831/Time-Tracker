@@ -1,76 +1,104 @@
-import { createClient } from "@/lib/supabase/server";
+import { query } from "@/lib/db";
+import { toDateText, toNullableNumber, toNumber, toTimestampText } from "@/lib/dbNormalize";
 import type { IsoDate, LeaveType } from "@/lib/types";
 import type { RecapInput } from "@/lib/calculations/recap";
 import { buildDailyHistory } from "@/lib/calculations/history";
 import type { DailyBreakdownRow } from "@/lib/calculations/dailyBreakdown";
 import type { Session } from "@/lib/calculations/workHours";
 
-const LEAVE_TYPES: LeaveType[] = ["vacation", "sick", "paternity"];
+interface DayEntryRow {
+  id: string;
+  date: string;
+  break_minutes_override: number | null;
+}
+interface SessionRow {
+  day_entry_id: string;
+  check_in: string;
+  check_out: string;
+}
+interface LeaveRow {
+  leave_type: LeaveType;
+  date: string;
+  hours: number;
+}
+
+// Columns are cast to deterministic text/float so the driver never applies its
+// own date/numeric parsing (see src/lib/dbNormalize.ts).
+const DAY_ENTRY_COLS = `id, date::text as date, break_minutes_override`;
+const SESSION_COLS = `s.day_entry_id,
+  (s.check_in at time zone 'UTC')::text as check_in,
+  (s.check_out at time zone 'UTC')::text as check_out`;
+const LEAVE_COLS = `leave_type, date::text as date, hours::float8 as hours`;
+
+function groupSessionsByDayEntry(rows: SessionRow[]): Map<string, Session[]> {
+  const byId = new Map<string, Session[]>();
+  for (const row of rows) {
+    const list = byId.get(row.day_entry_id) ?? [];
+    list.push({ checkIn: toTimestampText(row.check_in), checkOut: toTimestampText(row.check_out) });
+    byId.set(row.day_entry_id, list);
+  }
+  return byId;
+}
+
+function mapDays(
+  dayRows: DayEntryRow[],
+  sessionsByDayEntryId: Map<string, Session[]>
+): {
+  sessionsByDate: Map<IsoDate, Session[]>;
+  breakMinutesOverrideByDate: Map<IsoDate, number | null>;
+} {
+  const sessionsByDate = new Map<IsoDate, Session[]>();
+  const breakMinutesOverrideByDate = new Map<IsoDate, number | null>();
+  for (const row of dayRows) {
+    const date = toDateText(row.date);
+    sessionsByDate.set(date, sessionsByDayEntryId.get(row.id) ?? []);
+    breakMinutesOverrideByDate.set(date, toNullableNumber(row.break_minutes_override));
+  }
+  return { sessionsByDate, breakMinutesOverrideByDate };
+}
 
 /** Gathers everything the recap calculation needs. Returns null when no weekly target is set yet. */
 export async function getRecapInput(today: IsoDate): Promise<RecapInput | null> {
-  const supabase = createClient();
+  const weeklyTargetRows = await query<{ hours: number; effective_date: string }>(
+    `select hours::float8 as hours, effective_date::text as effective_date from weekly_target_settings`
+  );
 
-  const { data: weeklyTargetRows, error: wtErr } = await supabase
-    .from("weekly_target_settings")
-    .select("hours, effective_date");
-  if (wtErr) throw wtErr;
-
-  if (!weeklyTargetRows || weeklyTargetRows.length === 0) {
+  if (weeklyTargetRows.length === 0) {
     return null;
   }
 
   const [
-    { data: breakDurationRows, error: bdErr },
-    { data: standardWorkdayHoursRows, error: swhErr },
-    { data: leaveBankRows, error: lbErr },
-    { data: leaveEntryRows, error: leErr },
-    { data: holidayRows, error: hErr },
-    { data: dayEntryRows, error: deErr },
-    { data: rollingBalanceSeedRows, error: rbsErr },
+    breakDurationRows,
+    standardWorkdayHoursRows,
+    leaveBankRows,
+    leaveEntryRows,
+    holidayRows,
+    dayEntryRows,
+    sessionRows,
+    rollingBalanceSeedRows,
   ] = await Promise.all([
-    supabase.from("break_duration_settings").select("minutes, effective_date"),
-    supabase.from("standard_workday_hours_settings").select("hours, effective_date"),
-    supabase.from("leave_banks").select("leave_type, total_hours, effective_date"),
-    supabase.from("leave_entries").select("leave_type, date, hours"),
-    supabase.from("holidays").select("date"),
-    supabase.from("day_entries").select("id, date, break_minutes_override"),
-    supabase
-      .from("rolling_balance_seed")
-      .select("balance, created_at")
-      .order("created_at", { ascending: false })
-      .limit(1),
+    query<{ minutes: number; effective_date: string }>(
+      `select minutes::float8 as minutes, effective_date::text as effective_date from break_duration_settings`
+    ),
+    query<{ hours: number; effective_date: string }>(
+      `select hours::float8 as hours, effective_date::text as effective_date from standard_workday_hours_settings`
+    ),
+    query<{ leave_type: LeaveType; total_hours: number; effective_date: string }>(
+      `select leave_type, total_hours::float8 as total_hours, effective_date::text as effective_date from leave_banks`
+    ),
+    query<LeaveRow>(`select ${LEAVE_COLS} from leave_entries`),
+    query<{ date: string }>(`select date::text as date from holidays`),
+    query<DayEntryRow>(`select ${DAY_ENTRY_COLS} from day_entries`),
+    query<SessionRow>(`select ${SESSION_COLS} from sessions s`),
+    query<{ balance: number }>(
+      `select balance::float8 as balance from rolling_balance_seed order by created_at desc limit 1`
+    ),
   ]);
-  if (bdErr) throw bdErr;
-  if (swhErr) throw swhErr;
-  if (lbErr) throw lbErr;
-  if (leErr) throw leErr;
-  if (hErr) throw hErr;
-  if (deErr) throw deErr;
-  if (rbsErr) throw rbsErr;
 
-  const dayEntryIds = (dayEntryRows ?? []).map((row) => row.id);
-  const { data: sessionRows, error: sErr } = dayEntryIds.length
-    ? await supabase
-        .from("sessions")
-        .select("day_entry_id, check_in, check_out")
-        .in("day_entry_id", dayEntryIds)
-    : { data: [] as { day_entry_id: string; check_in: string; check_out: string }[], error: null };
-  if (sErr) throw sErr;
-
-  const sessionsByDayEntryId = new Map<string, Session[]>();
-  for (const row of sessionRows ?? []) {
-    const list = sessionsByDayEntryId.get(row.day_entry_id) ?? [];
-    list.push({ checkIn: row.check_in, checkOut: row.check_out });
-    sessionsByDayEntryId.set(row.day_entry_id, list);
-  }
-
-  const sessionsByDate = new Map<IsoDate, Session[]>();
-  const breakMinutesOverrideByDate = new Map<IsoDate, number | null>();
-  for (const row of dayEntryRows ?? []) {
-    sessionsByDate.set(row.date, sessionsByDayEntryId.get(row.id) ?? []);
-    breakMinutesOverrideByDate.set(row.date, row.break_minutes_override);
-  }
+  const { sessionsByDate, breakMinutesOverrideByDate } = mapDays(
+    dayEntryRows,
+    groupSessionsByDayEntry(sessionRows)
+  );
 
   const leaveHoursByDate = new Map<IsoDate, { hours: number }[]>();
   const allLeaveEntriesByType: Record<LeaveType, { date: IsoDate; hours: number }[]> = {
@@ -78,107 +106,96 @@ export async function getRecapInput(today: IsoDate): Promise<RecapInput | null> 
     sick: [],
     paternity: [],
   };
-  for (const row of leaveEntryRows ?? []) {
-    const list = leaveHoursByDate.get(row.date) ?? [];
-    list.push({ hours: row.hours });
-    leaveHoursByDate.set(row.date, list);
+  for (const row of leaveEntryRows) {
+    const date = toDateText(row.date);
+    const hours = toNumber(row.hours);
+    const list = leaveHoursByDate.get(date) ?? [];
+    list.push({ hours });
+    leaveHoursByDate.set(date, list);
 
-    allLeaveEntriesByType[row.leave_type as LeaveType].push({
-      date: row.date,
-      hours: row.hours,
-    });
+    allLeaveEntriesByType[row.leave_type].push({ date, hours });
   }
 
   return {
     today,
     weeklyTargetSettings: weeklyTargetRows.map((row) => ({
-      value: row.hours,
-      effectiveDate: row.effective_date,
+      value: toNumber(row.hours),
+      effectiveDate: toDateText(row.effective_date),
     })),
-    breakDurationSettings: (breakDurationRows ?? []).map((row) => ({
-      value: row.minutes,
-      effectiveDate: row.effective_date,
+    breakDurationSettings: breakDurationRows.map((row) => ({
+      value: toNumber(row.minutes),
+      effectiveDate: toDateText(row.effective_date),
     })),
-    standardWorkdayHoursSettings: (standardWorkdayHoursRows ?? []).map((row) => ({
-      value: row.hours,
-      effectiveDate: row.effective_date,
+    standardWorkdayHoursSettings: standardWorkdayHoursRows.map((row) => ({
+      value: toNumber(row.hours),
+      effectiveDate: toDateText(row.effective_date),
     })),
-    holidays: new Set((holidayRows ?? []).map((row) => row.date)),
+    holidays: new Set(holidayRows.map((row) => toDateText(row.date))),
     sessionsByDate,
     breakMinutesOverrideByDate,
     leaveHoursByDate,
-    leaveBankEntries: (leaveBankRows ?? []).map((row) => ({
-      leaveType: row.leave_type as LeaveType,
-      totalHours: row.total_hours,
-      effectiveDate: row.effective_date,
+    leaveBankEntries: leaveBankRows.map((row) => ({
+      leaveType: row.leave_type,
+      totalHours: toNumber(row.total_hours),
+      effectiveDate: toDateText(row.effective_date),
     })),
     allLeaveEntriesByType,
-    rollingBalanceSeed: rollingBalanceSeedRows?.[0]?.balance ?? 0,
+    rollingBalanceSeed: rollingBalanceSeedRows[0] ? toNumber(rollingBalanceSeedRows[0].balance) : 0,
   };
 }
 
-/** Per-day raw/break/leave-by-type breakdown for a date range (the recap page's history table). */
+/** Per-day raw/break/leave-by-type breakdown for a date range (the recap page's week log modal). */
 export async function getDailyHistoryRows(
   startDate: IsoDate,
   endDate: IsoDate
 ): Promise<DailyBreakdownRow[]> {
-  const supabase = createClient();
+  const range = [startDate, endDate];
 
   const [
-    { data: breakDurationRows, error: bdErr },
-    { data: standardWorkdayHoursRows, error: swhErr },
-    { data: dayEntryRows, error: deErr },
-    { data: leaveEntryRows, error: leErr },
-    { data: holidayRows, error: hErr },
+    breakDurationRows,
+    standardWorkdayHoursRows,
+    dayEntryRows,
+    sessionRows,
+    leaveEntryRows,
+    holidayRows,
   ] = await Promise.all([
-    supabase.from("break_duration_settings").select("minutes, effective_date"),
-    supabase.from("standard_workday_hours_settings").select("hours, effective_date"),
-    supabase
-      .from("day_entries")
-      .select("id, date, break_minutes_override")
-      .gte("date", startDate)
-      .lte("date", endDate),
-    supabase
-      .from("leave_entries")
-      .select("leave_type, date, hours")
-      .gte("date", startDate)
-      .lte("date", endDate),
-    supabase.from("holidays").select("date").gte("date", startDate).lte("date", endDate),
+    query<{ minutes: number; effective_date: string }>(
+      `select minutes::float8 as minutes, effective_date::text as effective_date from break_duration_settings`
+    ),
+    query<{ hours: number; effective_date: string }>(
+      `select hours::float8 as hours, effective_date::text as effective_date from standard_workday_hours_settings`
+    ),
+    query<DayEntryRow>(
+      `select ${DAY_ENTRY_COLS} from day_entries where date between $1::date and $2::date`,
+      range
+    ),
+    query<SessionRow>(
+      `select ${SESSION_COLS}
+         from sessions s join day_entries d on d.id = s.day_entry_id
+         where d.date between $1::date and $2::date`,
+      range
+    ),
+    query<LeaveRow>(
+      `select ${LEAVE_COLS} from leave_entries where date between $1::date and $2::date`,
+      range
+    ),
+    query<{ date: string }>(
+      `select date::text as date from holidays where date between $1::date and $2::date`,
+      range
+    ),
   ]);
-  if (bdErr) throw bdErr;
-  if (swhErr) throw swhErr;
-  if (deErr) throw deErr;
-  if (leErr) throw leErr;
-  if (hErr) throw hErr;
 
-  const dayEntryIds = (dayEntryRows ?? []).map((row) => row.id);
-  const { data: sessionRows, error: sErr } = dayEntryIds.length
-    ? await supabase
-        .from("sessions")
-        .select("day_entry_id, check_in, check_out")
-        .in("day_entry_id", dayEntryIds)
-    : { data: [] as { day_entry_id: string; check_in: string; check_out: string }[], error: null };
-  if (sErr) throw sErr;
-
-  const sessionsByDayEntryId = new Map<string, Session[]>();
-  for (const row of sessionRows ?? []) {
-    const list = sessionsByDayEntryId.get(row.day_entry_id) ?? [];
-    list.push({ checkIn: row.check_in, checkOut: row.check_out });
-    sessionsByDayEntryId.set(row.day_entry_id, list);
-  }
-
-  const sessionsByDate = new Map<IsoDate, Session[]>();
-  const breakMinutesOverrideByDate = new Map<IsoDate, number | null>();
-  for (const row of dayEntryRows ?? []) {
-    sessionsByDate.set(row.date, sessionsByDayEntryId.get(row.id) ?? []);
-    breakMinutesOverrideByDate.set(row.date, row.break_minutes_override);
-  }
+  const { sessionsByDate, breakMinutesOverrideByDate } = mapDays(
+    dayEntryRows,
+    groupSessionsByDayEntry(sessionRows)
+  );
 
   const leaveEntriesByDate = new Map<IsoDate, { leaveType: LeaveType; hours: number }[]>();
-  for (const row of leaveEntryRows ?? []) {
-    const list = leaveEntriesByDate.get(row.date) ?? [];
-    list.push({ leaveType: row.leave_type as LeaveType, hours: row.hours });
-    leaveEntriesByDate.set(row.date, list);
+  for (const row of leaveEntryRows) {
+    const date = toDateText(row.date);
+    const list = leaveEntriesByDate.get(date) ?? [];
+    list.push({ leaveType: row.leave_type, hours: toNumber(row.hours) });
+    leaveEntriesByDate.set(date, list);
   }
 
   return buildDailyHistory({
@@ -187,14 +204,14 @@ export async function getDailyHistoryRows(
     sessionsByDate,
     breakMinutesOverrideByDate,
     leaveEntriesByDate,
-    breakDurationSettings: (breakDurationRows ?? []).map((row) => ({
-      value: row.minutes,
-      effectiveDate: row.effective_date,
+    breakDurationSettings: breakDurationRows.map((row) => ({
+      value: toNumber(row.minutes),
+      effectiveDate: toDateText(row.effective_date),
     })),
-    holidays: new Set((holidayRows ?? []).map((row) => row.date)),
-    standardWorkdayHoursSettings: (standardWorkdayHoursRows ?? []).map((row) => ({
-      value: row.hours,
-      effectiveDate: row.effective_date,
+    holidays: new Set(holidayRows.map((row) => toDateText(row.date))),
+    standardWorkdayHoursSettings: standardWorkdayHoursRows.map((row) => ({
+      value: toNumber(row.hours),
+      effectiveDate: toDateText(row.effective_date),
     })),
   });
 }

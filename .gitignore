@@ -16,6 +16,9 @@ supabase/information.md
 # Local-only reference notes (personal working docs, not part of the shared repo)
 docs/THEMING.md
 
+# Database backup exports (contain all your data — keep them out of git)
+backups/
+
 # Build output
 dist/
 build/

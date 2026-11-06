@@ -6,11 +6,11 @@ Time Tracker v1 — architecture defined by the Architect Layer across Packs 001
 
 ## Stack
 
-Next.js (App Router), TypeScript, Tailwind CSS, Supabase (Postgres + Auth via `@supabase/ssr`), Vercel, Vitest.
+Next.js (App Router), TypeScript, Tailwind CSS, Neon Postgres (`@neondatabase/serverless`), single-password cookie login, Vercel, Vitest. *(Supabase Postgres + Auth until Sprint 008; superseded below.)*
 
 ## Users & Access
 
-Single user, personal use, gated by Supabase email/password login via middleware.
+Single user, personal use, gated by a single-password login via middleware (Sprint 008; previously Supabase email/password). See "Neon + password login (Sprint 008)".
 
 ## Data Model
 
@@ -66,3 +66,15 @@ See `planning/DOMAIN.md`.
 ## Pay Cycle (Sprint 007)
 
 Weeks run **Saturday–Friday**; a pay period is a fixed 14-day block (Week 1 + Week 2) anchored at `PAY_CYCLE_ANCHOR = 2026-01-10` in `src/lib/calculations/payCycle.ts` (`payWeekStart`, `payPeriodStart`), matching the user's pay stubs. `isoWeek.ts` and `mondayOf` were removed; `recap.ts`, `periods.ts`, `physicalYear.ts`, the Recap and History pages all use the pay cycle. The Recap's `?period=` value snaps to its period start. The earliest `weekly_target_settings.effective_date` is 2026-01-10 and the rolling-balance seed is -12.12 (the sheet's carried-in balance), applied by `supabase/migration-007-sat-fri-weeks.sql`. Any text elsewhere in this file that mentions Monday–Sunday weeks, ISO week pairing, or the 53-week limitation is historical and superseded by this section.
+
+## Neon + password login (Sprint 008)
+
+Supersedes every Supabase data-access and auth statement above.
+
+- **Database**: Neon Postgres. The tables are unchanged (schema in `neon/schema.sql`; no RLS or policies because the database is reachable only from the server). Connection string in `DATABASE_URL` (pooled host), server-side only.
+- **Data layer**: `src/lib/db.ts` exposes `query(text, params)` over the Neon HTTP driver (lazy client). `src/lib/data/{entries,recap,settings}.ts` use parameterized SQL and keep the exported names and row shapes they always had.
+- **Shape parity**: SQL casts (`date::text`, `(ts at time zone 'UTC')::text`, `numeric::float8`) plus pure normalizers in `src/lib/dbNormalize.ts` return dates as `YYYY-MM-DD`, timestamps as `YYYY-MM-DDTHH:MM:SS+00:00` (characters 11-16 = UTC HH:MM) and numbers as JS numbers. Inserts convert with `$n::timestamp at time zone 'UTC'`.
+- **Login**: `APP_PASSWORD_HASH` (`scrypt:<N>:<salt>:<hash>`, colons because Next expands `$` in env files) verified in `src/lib/auth/password.ts` (Node only). On success `signIn` sets the `tt_session` cookie (`<expiresAtMs>.<hexHmac>`, HMAC-SHA256 with `SESSION_SECRET`, 30 days, httpOnly, secure in production, sameSite=lax) via `src/lib/auth/session.ts` (Web Crypto, so it also runs in Edge middleware). `src/middleware.ts` verifies the cookie; unauthenticated requests go to `/login`. Wrong password: 800 ms delay then `/login?error=...`.
+- **Rendering**: with the Supabase client gone, pages no longer read cookies and would be pre-rendered at build; `src/app/(app)/layout.tsx` sets `export const dynamic = "force-dynamic"`.
+- **Scripts (user-run)**: `db:hash-password`, `db:migrate` (Supabase to Neon copy with count + md5 parity check), `db:backup` (SQL export to gitignored `backups/`). Procedures in `docs/OPERATIONS.md`.
+- **Env vars**: `DATABASE_URL`, `APP_PASSWORD_HASH`, `SESSION_SECRET` (plus one-time `SUPABASE_DB_URL` for the copy). `@supabase/*` packages and `src/lib/supabase/` are removed; `supabase/*.sql` is kept as history.

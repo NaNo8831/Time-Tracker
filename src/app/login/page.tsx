@@ -20,20 +20,6 @@ export default function LoginPage({
         )}
 
         <div className="space-y-1">
-          <label htmlFor="email" className="block text-sm font-medium text-[var(--color-text-muted)]">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            className="w-full rounded-md border border-[var(--color-border-strong)] bg-[var(--color-card-bg)] px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none"
-          />
-        </div>
-
-        <div className="space-y-1">
           <label htmlFor="password" className="block text-sm font-medium text-[var(--color-text-muted)]">
             Password
           </label>
@@ -42,6 +28,7 @@ export default function LoginPage({
             name="password"
             type="password"
             required
+            autoFocus
             autoComplete="current-password"
             className="w-full rounded-md border border-[var(--color-border-strong)] bg-[var(--color-card-bg)] px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none"
           />

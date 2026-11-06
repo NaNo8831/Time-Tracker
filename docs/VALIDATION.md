@@ -2,6 +2,14 @@
 
 Per the Micro-app rigor profile: cover the happy path and the one or two failure modes that would lose the user's data. Do not over-test.
 
+## Sprint 008 Validation (done 2026-11-06 by the Builder; live checks by the user at cutover)
+
+- `npx tsc --noEmit` clean, `npx vitest run` 114/114, `npm run build` clean (after adding `force-dynamic`).
+- New tests: session token (valid, expiry boundary, wrong secret, tampered, extended expiry, malformed), password hashing round trip through the real script, row-shape parity of the normalizers (08:00 stays 08:00).
+- Schema and every query were run against PGlite (in-process real Postgres) because the Builder has no database access.
+- Login smoke test on a throwaway dev server: signed-out visit redirects to `/login`; form has only a Password field; wrong password shows "Incorrect password."; correct password sets the cookie and `/login` then redirects to `/`.
+- **Not verified by the Builder (user, at cutover)**: real Neon connectivity, the copy script's count/checksum match on real data, before/after screenshots of History and Recap, add/remove of a session, leave, break and setting on a scratch date, Prev/Next, and a test restore of a backup. See `docs/OPERATIONS.md`.
+
 ## Sprint 007 Validation Priorities (done 2026-11-05; live checks by the user after deploy + SQL)
 
 - **Highest priority — reconciliation against the sheet**: every Sat–Fri week Jan 10 → Jun 26 must match the sheet's printed weekly Actual (±0.02) and rolling balance (±0.05) before the SQL is released.

@@ -66,3 +66,26 @@ Use this file to track important project files, references, samples, and their s
 | `src/lib/calculations/payCycle.ts` | Pay cycle anchor, `payWeekStart`, `payPeriodStart` (replaces `isoWeek.ts`). | Built Sprint 007 |
 | `tests/calculations/payCycle.test.ts`, `tests/calculations/payCycleRealData.test.ts` | Stub-date tests; real-sheet regression (-9.37/-11.97/-16.97). | Built Sprint 007 |
 | `supabase/migration-007-sat-fri-weeks.sql` | Additive, idempotent: Jan 10 import, settings dates → 2026-01-10, seed → -12.12. | Written; user runs after deploy |
+
+## Sprint 008 Deliverables
+
+| File | Purpose | Status |
+|---|---|---|
+| `planning/sprints/008-supabase-to-neon/requirements.md` | Sprint 008 requirements. | Created by Architect Pack 008 |
+| `planning/sprints/008-supabase-to-neon/blueprint.md` | Neon data layer, password login, scripts, cutover/rollback. | Created by Architect Pack 008 |
+| `planning/sprints/008-supabase-to-neon/acceptance.md` | Sprint 008 acceptance criteria. | Created by Architect Pack 008 |
+| `planning/sprints/008-supabase-to-neon/handoff-prompt.md` | Sprint 008 Builder handoff prompt. | Created by Architect Pack 008 |
+
+### Built in Sprint 008
+
+| File | Purpose | Status |
+|---|---|---|
+| `src/lib/db.ts`, `src/lib/dbNormalize.ts` | Neon query helper; row-shape normalizers. | Built |
+| `src/lib/data/{entries,recap,settings}.ts` | Rewritten to parameterized SQL, same exports. | Built |
+| `src/lib/auth/{session,password,actions}.ts`, `src/middleware.ts`, `src/app/login/page.tsx` | Password login with signed cookie. | Built |
+| `src/app/(app)/layout.tsx` | `force-dynamic`. | Edited |
+| `neon/schema.sql` | Schema for Neon (idempotent). | Built; user runs |
+| `scripts/{hash-password,migrate-supabase-to-neon,backup-db}.mjs`, `scripts/lib/tables.mjs` | User-run password hash, copy, backup. | Built; user runs |
+| `docs/OPERATIONS.md` | Env vars, cutover, rollback, backups, restore. | Built |
+| `tests/auth/*.test.ts`, `tests/data/rowParity.test.ts` | Session, password and shape-parity tests. | Built |
+| `src/lib/supabase/{client,server}.ts` | Removed. | Deleted |
